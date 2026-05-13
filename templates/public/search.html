@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}{{ ('Recherche' if lang == 'fr' else 'Search') + (' — ' + q if q else '') }} — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row g-4">
+
+    <!-- Sidebar filters -->
+    <div class="col-lg-3">
+      <div class="citify-card p-3 sticky-top" style="top: 80px;">
+        <h2 class="h6 mb-3 text-muted text-uppercase">{{ 'Filtrer' if lang == 'fr' else 'Filter' }}</h2>
+        <form method="get" action="{{ url_for('public.search') }}">
+          <div class="mb-3">
+            <label class="form-label">{{ 'Recherche' if lang == 'fr' else 'Search' }}</label>
+            <input class="form-control form-control-sm" type="search" name="q" value="{{ q }}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">{{ 'Catégorie' if lang == 'fr' else 'Category' }}</label>
+            <select class="form-select form-select-sm" name="category">
+              <option value="">{{ 'Toutes les catégories' if lang == 'fr' else 'All categories' }}</option>
+              {% for cat in categories %}
+                <option value="{{ cat.slug }}" {{ 'selected' if cat_slug == cat.slug }}>
+                  {{ cat.name_fr if lang == 'fr' else cat.name_en }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-accent btn-sm w-100">
+            {{ 'Appliquer' if lang == 'fr' else 'Apply' }}
+          </button>
+          {% if q or cat_slug %}
+            <a href="{{ url_for('public.search') }}" class="btn btn-outline-secondary btn-sm w-100 mt-2">
+              {{ 'Réinitialiser' if lang == 'fr' else 'Clear filters' }}
+            </a>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="col-lg-9">
+      <div class="section-header">
+        <h1 class="h4 mb-0">
+          {% if q %}
+            {{ 'Résultats pour' if lang == 'fr' else 'Results for' }} "<span class="text-accent">{{ q }}</span>"
+          {% elif cat_slug %}
+            {% for cat in categories %}{% if cat.slug == cat_slug %}{{ cat.name_fr if lang == 'fr' else cat.name_en }}{% endif %}{% endfor %}
+          {% else %}
+            {{ 'Tous les commerces' if lang == 'fr' else 'All Businesses' }}
+          {% endif %}
+        </h1>
+        <span class="text-muted small">{{ pagination.total }} {{ 'commerces' if lang == 'fr' else 'businesses' }}</span>
+      </div>
+
+      {% if merchants %}
+        <div class="row g-3">
+          {% for m in merchants %}
+          <div class="col-12 col-sm-6 col-xl-4">
+            <a href="{{ url_for('public.merchant_profile', slug=m.slug) }}" class="text-decoration-none">
+              <div class="merchant-card">
+                <div class="d-flex align-items-start gap-3 mb-3">
+                  {% if m.logo_url %}
+                    <img src="{{ m.logo_url }}" alt="{{ m.business_name }}" class="merchant-logo" loading="lazy">
+                  {% else %}
+                    <div class="merchant-logo-placeholder"><i class="bi bi-shop"></i></div>
+                  {% endif %}
+                  <div class="flex-grow-1 min-w-0">
+                    <h2 class="h6 mb-1 text-truncate">{{ m.business_name }}</h2>
+                    {% if m.is_verified %}
+                      <span class="badge-verified"><i class="bi bi-patch-check-fill"></i> {{ 'Certifié' if lang == 'fr' else 'Certified' }}</span>
+                    {% endif %}
+                    {% if m.neighbourhood %}
+                      <div class="text-muted small mt-1"><i class="bi bi-geo-alt me-1"></i>{{ m.neighbourhood }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+                {% if m.description_fr or m.description_en %}
+                  <p class="text-muted small mb-2" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                    {{ m.description_fr if lang == 'fr' and m.description_fr else m.description_en }}
+                  </p>
+                {% endif %}
+                {% if m.category %}
+                  <span class="badge" style="background:var(--bg-elevated);color:var(--text-muted);font-size:0.72rem;">
+                    {{ m.category.name_fr if lang == 'fr' else m.category.name_en }}
+                  </span>
+                {% endif %}
+              </div>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <nav class="mt-4" aria-label="Search pagination">
+          <ul class="pagination citify-pagination justify-content-center">
+            {% if pagination.has_prev %}
+              <li class="page-item"><a class="page-link" href="?q={{ q }}&category={{ cat_slug }}&page={{ pagination.prev_num }}"><i class="bi bi-chevron-left"></i></a></li>
+            {% endif %}
+            {% for p in pagination.iter_pages() %}
+              {% if p %}
+                <li class="page-item {{ 'active' if p == pagination.page }}">
+                  <a class="page-link" href="?q={{ q }}&category={{ cat_slug }}&page={{ p }}">{{ p }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            {% if pagination.has_next %}
+              <li class="page-item"><a class="page-link" href="?q={{ q }}&category={{ cat_slug }}&page={{ pagination.next_num }}"><i class="bi bi-chevron-right"></i></a></li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+
+      {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-search fs-1 d-block mb-3"></i>
+          <p class="fs-5">{{ 'Aucun commerce trouvé.' if lang == 'fr' else 'No businesses found.' }}</p>
+          <a href="{{ url_for('public.search') }}" class="btn btn-outline-accent mt-2">{{ 'Voir tous les commerces' if lang == 'fr' else 'Browse all businesses' }}</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

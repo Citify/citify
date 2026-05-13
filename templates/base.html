@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="{{ lang or 'en' }}" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="{% block meta_description %}Citify — Supporting local Montreal businesses. Discover merchants in your neighbourhood. / Soutenir les commerces locaux de Montréal.{% endblock %}">
+  <meta name="robots" content="index, follow">
+  <title>{% block title %}Citify — Montréal Local{% endblock %}</title>
+
+  <!-- Open Graph -->
+  <meta property="og:site_name" content="Citify">
+  <meta property="og:title" content="{% block og_title %}Citify — Montréal Local{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Discover local Montreal businesses / Découvrez les commerces locaux de Montréal{% endblock %}">
+  <meta property="og:image" content="{{ url_for('static', filename='img/og-image.jpg', _external=True) }}">
+  <meta property="og:type" content="website">
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="{{ request.url }}">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <!-- Leaflet CSS -->
+  <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+
+  <!-- Citify CSS -->
+  <link href="{{ url_for('static', filename='css/citify.css') }}" rel="stylesheet">
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- ===== NAVBAR ===== -->
+<nav class="navbar navbar-expand-lg sticky-top citify-navbar">
+  <div class="container">
+
+    <!-- Logo -->
+    <a class="navbar-brand citify-logo" href="{{ url_for('public.index') }}">
+      <svg width="28" height="36" viewBox="0 0 64 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M32 2C18 2 8 13 8 26C8 44 32 78 32 78C32 78 56 44 56 26C56 13 46 2 32 2Z" fill="#e94560"/>
+        <circle cx="32" cy="26" r="11" fill="#1a1a2e"/>
+      </svg>
+      <span>citify</span>
+    </a>
+
+    <!-- Mobile toggle -->
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain" aria-label="Toggle navigation">
+      <i class="bi bi-list fs-4 text-light"></i>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navMain">
+
+      <!-- Search bar -->
+      <form class="d-flex mx-auto my-2 my-lg-0 citify-search-bar" action="{{ url_for('public.search') }}" method="get" role="search">
+        <div class="input-group">
+          <input class="form-control" type="search" name="q" placeholder="{{ 'Rechercher un commerce...' if lang == 'fr' else 'Search businesses...' }}" value="{{ request.args.get('q', '') }}" aria-label="Search">
+          <button class="btn btn-accent" type="submit" aria-label="Search">
+            <i class="bi bi-search"></i>
+          </button>
+        </div>
+      </form>
+
+      <!-- Nav links -->
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('public.search') }}">
+            <i class="bi bi-grid me-1"></i>{{ 'Catégories' if lang == 'fr' else 'Browse' }}
+          </a>
+        </li>
+        {% if current_user.is_authenticated %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('merchant.dashboard') }}">
+              <i class="bi bi-shop me-1"></i>{{ 'Mon tableau de bord' if lang == 'fr' else 'Dashboard' }}
+            </a>
+          </li>
+          {% if current_user.is_admin %}
+          <li class="nav-item">
+            <a class="nav-link text-warning" href="{{ url_for('admin.dashboard') }}">
+              <i class="bi bi-shield me-1"></i>Admin
+            </a>
+          </li>
+          {% endif %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('auth.logout') }}">
+              <i class="bi bi-box-arrow-right me-1"></i>{{ 'Déconnexion' if lang == 'fr' else 'Logout' }}
+            </a>
+          </li>
+        {% else %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('auth.login') }}">{{ 'Connexion' if lang == 'fr' else 'Login' }}</a>
+          </li>
+          <li class="nav-item">
+            <a class="btn btn-accent btn-sm px-3" href="{{ url_for('auth.register') }}">
+              {{ 'Inscrire mon commerce' if lang == 'fr' else 'List Your Business' }}
+            </a>
+          </li>
+        {% endif %}
+
+        <!-- Language toggle -->
+        <li class="nav-item ms-2">
+          {% if lang == 'fr' %}
+            <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('public.switch_lang', lang='en') }}">EN</a>
+          {% else %}
+            <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('public.switch_lang', lang='fr') }}">FR</a>
+          {% endif %}
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== FLASH MESSAGES ===== -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="container mt-3">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- ===== MAIN CONTENT ===== -->
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer class="citify-footer mt-5">
+  <div class="container">
+    <div class="row gy-4">
+
+      <!-- Brand -->
+      <div class="col-12 col-md-4">
+        <a class="citify-logo text-decoration-none d-inline-flex align-items-center gap-2 mb-3" href="{{ url_for('public.index') }}">
+          <svg width="22" height="28" viewBox="0 0 64 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M32 2C18 2 8 13 8 26C8 44 32 78 32 78C32 78 56 44 56 26C56 13 46 2 32 2Z" fill="#e94560"/>
+            <circle cx="32" cy="26" r="11" fill="#1a1a2e"/>
+          </svg>
+          <span class="fw-800 text-light">citify</span>
+        </a>
+        <p class="text-muted small mb-3">
+          {{ 'Soutenir les commerces locaux de Montréal.' if lang == 'fr' else 'Supporting local Montreal businesses.' }}
+        </p>
+        <!-- Donation button -->
+        <a href="https://ko-fi.com/citify" target="_blank" rel="noopener noreferrer" class="btn btn-outline-accent btn-sm">
+          <i class="bi bi-heart-fill me-1 text-danger"></i>
+          {{ 'Soutenir Citify' if lang == 'fr' else 'Support Citify' }}
+        </a>
+      </div>
+
+      <!-- Links -->
+      <div class="col-6 col-md-2">
+        <h6 class="text-muted text-uppercase small fw-600 mb-3">{{ 'Explorer' if lang == 'fr' else 'Explore' }}</h6>
+        <ul class="list-unstyled small">
+          <li class="mb-2"><a href="{{ url_for('public.search') }}" class="footer-link">{{ 'Tous les commerces' if lang == 'fr' else 'All Businesses' }}</a></li>
+          {% for cat in categories[:5] %}
+          <li class="mb-2"><a href="{{ url_for('public.category', slug=cat.slug) }}" class="footer-link">{{ cat.name_fr if lang == 'fr' else cat.name_en }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="col-6 col-md-2">
+        <h6 class="text-muted text-uppercase small fw-600 mb-3">{{ 'Commerçants' if lang == 'fr' else 'Merchants' }}</h6>
+        <ul class="list-unstyled small">
+          <li class="mb-2"><a href="{{ url_for('auth.register') }}" class="footer-link">{{ 'Inscrire mon commerce' if lang == 'fr' else 'List Your Business' }}</a></li>
+          <li class="mb-2"><a href="{{ url_for('auth.login') }}" class="footer-link">{{ 'Connexion' if lang == 'fr' else 'Login' }}</a></li>
+        </ul>
+      </div>
+
+      <div class="col-6 col-md-2">
+        <h6 class="text-muted text-uppercase small fw-600 mb-3">Citify</h6>
+        <ul class="list-unstyled small">
+          <li class="mb-2"><a href="{{ url_for('public.about') }}" class="footer-link">{{ 'À propos' if lang == 'fr' else 'About' }}</a></li>
+          <li class="mb-2"><a href="{{ url_for('public.tos') }}" class="footer-link">{{ 'Conditions d\'utilisation' if lang == 'fr' else 'Terms of Service' }}</a></li>
+          <li class="mb-2"><a href="{{ url_for('public.privacy') }}" class="footer-link">{{ 'Confidentialité' if lang == 'fr' else 'Privacy Policy' }}</a></li>
+          <li class="mb-2"><a href="https://leshley.ca" target="_blank" rel="noopener" class="footer-link">Leshley.ca</a></li>
+        </ul>
+      </div>
+
+    </div>
+
+    <hr class="border-secondary mt-4 mb-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center small text-muted">
+      <span>&copy; {{ 2026 }} Citify.ca &mdash; Montréal, Québec</span>
+      <span>{{ 'Fait avec' if lang == 'fr' else 'Made with' }} <i class="bi bi-heart-fill text-danger"></i> {{ 'pour Montréal' if lang == 'fr' else 'for Montreal' }}</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Mobile bottom nav -->
+<nav class="citify-mobile-nav d-flex d-lg-none">
+  <a href="{{ url_for('public.index') }}" class="mobile-nav-item {{ 'active' if request.endpoint == 'public.index' }}">
+    <i class="bi bi-house-fill"></i>
+    <span>{{ 'Accueil' if lang == 'fr' else 'Home' }}</span>
+  </a>
+  <a href="{{ url_for('public.search') }}" class="mobile-nav-item {{ 'active' if request.endpoint == 'public.search' }}">
+    <i class="bi bi-search"></i>
+    <span>{{ 'Recherche' if lang == 'fr' else 'Search' }}</span>
+  </a>
+  <a href="{{ url_for('public.search') }}" class="mobile-nav-item">
+    <i class="bi bi-grid-fill"></i>
+    <span>{{ 'Catégories' if lang == 'fr' else 'Browse' }}</span>
+  </a>
+  {% if current_user.is_authenticated %}
+  <a href="{{ url_for('merchant.dashboard') }}" class="mobile-nav-item {{ 'active' if 'merchant' in request.endpoint }}">
+    <i class="bi bi-shop-fill"></i>
+    <span>{{ 'Tableau' if lang == 'fr' else 'Dashboard' }}</span>
+  </a>
+  {% else %}
+  <a href="{{ url_for('auth.register') }}" class="mobile-nav-item">
+    <i class="bi bi-plus-circle-fill"></i>
+    <span>{{ 'Inscrire' if lang == 'fr' else 'List' }}</span>
+  </a>
+  {% endif %}
+</nav>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='js/citify.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

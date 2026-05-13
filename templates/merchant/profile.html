@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Modifier le profil' if lang == 'fr' else 'Edit Profile' }} — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="{{ url_for('merchant.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="h4 mb-0">{{ 'Modifier le profil' if lang == 'fr' else 'Edit Profile' }}</h1>
+      </div>
+
+      <form method="post" action="{{ url_for('merchant.edit_profile') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Business info -->
+        <div class="citify-form-card mb-4">
+          <h2 class="h6 text-muted text-uppercase mb-4">{{ 'Informations du commerce' if lang == 'fr' else 'Business Information' }}</h2>
+
+          <div class="mb-3">
+            <label class="form-label">{{ 'Nom du commerce *' if lang == 'fr' else 'Business Name *' }}</label>
+            <input class="form-control" type="text" name="business_name" value="{{ merchant.business_name }}" required>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Description (Français)' if lang == 'fr' else 'Description (French)' }}</label>
+              <textarea class="form-control" name="description_fr" rows="4" placeholder="{{ 'Décrivez votre commerce...' }}">{{ merchant.description_fr }}</textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Description (English)</label>
+              <textarea class="form-control" name="description_en" rows="4" placeholder="Describe your business...">{{ merchant.description_en }}</textarea>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-8">
+              <label class="form-label">{{ 'Adresse' if lang == 'fr' else 'Address' }}</label>
+              <input class="form-control" type="text" name="address" value="{{ merchant.address }}"
+                     placeholder="123 Rue Saint-Denis, Montréal">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">{{ 'Quartier' if lang == 'fr' else 'Neighbourhood' }}</label>
+              <input class="form-control" type="text" name="neighbourhood" value="{{ merchant.neighbourhood }}"
+                     placeholder="Plateau, Mile End...">
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Catégorie' if lang == 'fr' else 'Category' }}</label>
+              <select class="form-select" name="category_id" id="categorySelect"
+                      onchange="loadSubcategories(this.value, document.getElementById('subcategorySelect'))">
+                <option value="">— {{ 'Choisir' if lang == 'fr' else 'Select' }} —</option>
+                {% for cat in categories %}
+                  <option value="{{ cat.id }}" {{ 'selected' if merchant.category_id == cat.id }}>
+                    {{ cat.name_fr if lang == 'fr' else cat.name_en }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Sous-catégorie' if lang == 'fr' else 'Subcategory' }}</label>
+              <select class="form-select" name="subcategory_id" id="subcategorySelect">
+                <option value="">— {{ 'Choisir' if lang == 'fr' else 'Select' }} —</option>
+                {% if merchant.subcategory %}
+                  <option value="{{ merchant.subcategory.id }}" selected>
+                    {{ merchant.subcategory.name_fr if lang == 'fr' else merchant.subcategory.name_en }}
+                  </option>
+                {% endif %}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- NEQ -->
+        <div class="citify-form-card mb-4">
+          <h2 class="h6 text-muted text-uppercase mb-4">{{ 'Certification' if lang == 'fr' else 'Certification' }}</h2>
+          <div class="mb-0">
+            <label class="form-label">{{ 'Numéro d\'entreprise du Québec (NEQ)' if lang == 'fr' else 'Quebec Business Number (NEQ)' }}</label>
+            <input class="form-control" type="text" name="neq" value="{{ merchant.neq }}" placeholder="1234567890">
+            <div class="form-text">
+              {% if merchant.is_verified %}
+                <span class="badge-verified"><i class="bi bi-patch-check-fill"></i> {{ 'Badge certifié actif' if lang == 'fr' else 'Certified badge active' }}</span>
+              {% else %}
+                {{ 'Entrez votre NEQ pour obtenir le badge Entreprise certifiée.' if lang == 'fr' else 'Enter your NEQ to get the Certified Business badge.' }}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Social links -->
+        <div class="citify-form-card mb-4">
+          <h2 class="h6 text-muted text-uppercase mb-4">{{ 'Coordonnées & réseaux sociaux' if lang == 'fr' else 'Contact & Social Links' }}</h2>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-telephone me-1"></i>{{ 'Téléphone' if lang == 'fr' else 'Phone' }}</label>
+              <input class="form-control" type="tel" name="phone" value="{{ merchant.phone }}" placeholder="+1 514 555-0000">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-whatsapp me-1"></i>WhatsApp</label>
+              <input class="form-control" type="tel" name="whatsapp" value="{{ merchant.whatsapp }}" placeholder="+1 514 555-0000">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-globe me-1"></i>{{ 'Site web' if lang == 'fr' else 'Website' }}</label>
+              <input class="form-control" type="url" name="website" value="{{ merchant.website }}" placeholder="https://example.com">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-instagram me-1"></i>Instagram</label>
+              <input class="form-control" type="text" name="instagram" value="{{ merchant.instagram }}" placeholder="@username">
+            </div>
+            <div class="col-12">
+              <label class="form-label"><i class="bi bi-facebook me-1"></i>Facebook</label>
+              <input class="form-control" type="url" name="facebook" value="{{ merchant.facebook }}" placeholder="https://facebook.com/yourpage">
+            </div>
+          </div>
+        </div>
+
+        <!-- Logo -->
+        <div class="citify-form-card mb-4">
+          <h2 class="h6 text-muted text-uppercase mb-4">{{ 'Logo du commerce' if lang == 'fr' else 'Business Logo' }}</h2>
+          {% if merchant.logo_url %}
+            <img src="{{ merchant.logo_url }}" alt="Logo" class="merchant-logo mb-3" style="width:80px;height:80px;">
+          {% endif %}
+          <input class="form-control" type="file" name="logo" accept="image/*"
+                 onchange="previewImages(this, 'logo-preview')">
+          <div id="logo-preview" class="d-flex gap-2 mt-2"></div>
+          <div class="form-text">{{ 'JPG, PNG ou WebP. Max 8MB.' }}</div>
+        </div>
+
+        <div class="d-flex gap-3">
+          <button type="submit" class="btn btn-accent px-5">
+            <i class="bi bi-check-lg me-1"></i>{{ 'Enregistrer' if lang == 'fr' else 'Save Changes' }}
+          </button>
+          <a href="{{ url_for('merchant.dashboard') }}" class="btn btn-outline-secondary">
+            {{ 'Annuler' if lang == 'fr' else 'Cancel' }}
+          </a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Ajouter un produit' if lang == 'fr' else 'Add Product' }} — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-7">
+
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="{{ url_for('merchant.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="h4 mb-0">{{ 'Ajouter un produit' if lang == 'fr' else 'Add a Product' }}</h1>
+      </div>
+
+      <div class="citify-form-card">
+        <form method="post" action="{{ url_for('merchant.add_product') }}" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <!-- Names -->
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Nom (Français)' if lang == 'fr' else 'Name (French)' }}</label>
+              <input class="form-control" type="text" name="name_fr" placeholder="{{ 'Ex: Café au lait' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Name (English) *</label>
+              <input class="form-control" type="text" name="name_en" placeholder="E.g. Café au lait" required>
+            </div>
+          </div>
+
+          <!-- Descriptions -->
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Description (Français)' if lang == 'fr' else 'Description (French)' }}</label>
+              <textarea class="form-control" name="description_fr" rows="3" placeholder="{{ 'Décrivez ce produit...' }}"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Description (English)</label>
+              <textarea class="form-control" name="description_en" rows="3" placeholder="Describe this product..."></textarea>
+            </div>
+          </div>
+
+          <!-- Price -->
+          <div class="mb-3">
+            <label class="form-label">{{ 'Prix' if lang == 'fr' else 'Price' }}</label>
+            <div class="input-group">
+              <span class="input-group-text" style="background:var(--bg-elevated);border-color:var(--border);color:var(--text-muted);">$</span>
+              <input class="form-control" type="number" name="price" step="0.01" min="0"
+                     placeholder="0.00" id="priceInput">
+            </div>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="price_on_request" id="priceOnRequest"
+                     onchange="document.getElementById('priceInput').disabled = this.checked">
+              <label class="form-check-label text-muted" for="priceOnRequest">
+                {{ 'Prix sur demande' if lang == 'fr' else 'Price on request' }}
+              </label>
+            </div>
+          </div>
+
+          <!-- Category -->
+          <div class="mb-4">
+            <label class="form-label">{{ 'Catégorie' if lang == 'fr' else 'Category' }}</label>
+            <select class="form-select" name="category_id">
+              <option value="">— {{ 'Choisir' if lang == 'fr' else 'Select' }} —</option>
+              {% for cat in categories %}
+                <option value="{{ cat.id }}">{{ cat.name_fr if lang == 'fr' else cat.name_en }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Photos -->
+          <div class="mb-4">
+            <label class="form-label">{{ 'Photos' if lang == 'fr' else 'Photos' }}</label>
+            <input class="form-control" type="file" name="images" accept="image/*" multiple
+                   onchange="previewImages(this, 'image-preview')">
+            <div id="image-preview" class="d-flex flex-wrap gap-2 mt-2"></div>
+            <div class="form-text">{{ 'JPG, PNG ou WebP. Plusieurs photos acceptées. Max 8MB chacune.' if lang == 'fr' else 'JPG, PNG or WebP. Multiple photos accepted. Max 8MB each.' }}</div>
+          </div>
+
+          <div class="d-flex gap-3">
+            <button type="submit" class="btn btn-accent px-5">
+              <i class="bi bi-plus-lg me-1"></i>{{ 'Ajouter le produit' if lang == 'fr' else 'Add Product' }}
+            </button>
+            <a href="{{ url_for('merchant.dashboard') }}" class="btn btn-outline-secondary">
+              {{ 'Annuler' if lang == 'fr' else 'Cancel' }}
+            </a>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- Import shortcuts -->
+      <div class="citify-card p-3 mt-3 text-center">
+        <p class="text-muted small mb-2">{{ 'Vous avez plusieurs produits ?' if lang == 'fr' else 'Have multiple products?' }}</p>
+        <div class="d-flex justify-content-center gap-2">
+          <a href="{{ url_for('merchant.import_csv') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-filetype-csv me-1"></i>{{ 'Importer CSV' if lang == 'fr' else 'Import CSV' }}
+          </a>
+          <a href="{{ url_for('merchant.import_website') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-globe me-1"></i>{{ 'Importer depuis mon site' if lang == 'fr' else 'Import from website' }}
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

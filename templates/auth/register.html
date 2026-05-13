@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Inscrire mon commerce' if lang == 'fr' else 'List Your Business' }} — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+
+      <div class="text-center mb-4">
+        <a href="{{ url_for('public.index') }}" class="citify-logo justify-content-center mb-3 d-flex">
+          <svg width="28" height="36" viewBox="0 0 64 80" xmlns="http://www.w3.org/2000/svg">
+            <path d="M32 2C18 2 8 13 8 26C8 44 32 78 32 78C32 78 56 44 56 26C56 13 46 2 32 2Z" fill="#e94560"/>
+            <circle cx="32" cy="26" r="11" fill="#1a1a2e"/>
+          </svg>
+          <span>citify</span>
+        </a>
+        <h1 class="h4">{{ 'Inscrire mon commerce' if lang == 'fr' else 'List Your Business' }}</h1>
+        <p class="text-muted small">{{ 'Gratuit. Toujours.' if lang == 'fr' else 'Free. Always.' }}</p>
+      </div>
+
+      <div class="citify-form-card">
+        {% if errors %}
+          <div class="alert alert-danger mb-4">
+            {% for e in errors %}<div>{{ e }}</div>{% endfor %}
+          </div>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('auth.register') }}" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <h2 class="h6 text-muted text-uppercase mb-3">{{ 'Votre commerce' if lang == 'fr' else 'Your Business' }}</h2>
+
+          <div class="mb-3">
+            <label class="form-label" for="business_name">{{ 'Nom du commerce *' if lang == 'fr' else 'Business Name *' }}</label>
+            <input class="form-control" type="text" id="business_name" name="business_name"
+                   value="{{ form.get('business_name','') }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="address">{{ 'Adresse' if lang == 'fr' else 'Address' }}</label>
+            <input class="form-control" type="text" id="address" name="address"
+                   placeholder="{{ '123 Rue Saint-Denis, Montréal' if lang == 'fr' else '123 Saint-Denis St, Montreal' }}"
+                   value="{{ form.get('address','') }}">
+            <div class="form-text">{{ 'Utilisée pour afficher votre localisation sur la carte.' if lang == 'fr' else 'Used to show your location on the map.' }}</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="neighbourhood">{{ 'Quartier' if lang == 'fr' else 'Neighbourhood' }}</label>
+            <input class="form-control" type="text" id="neighbourhood" name="neighbourhood"
+                   placeholder="{{ 'Plateau-Mont-Royal, Mile End...' }}"
+                   value="{{ form.get('neighbourhood','') }}">
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label" for="neq">{{ 'Numéro d\'entreprise du Québec (NEQ)' if lang == 'fr' else 'Quebec Business Number (NEQ)' }}</label>
+            <input class="form-control" type="text" id="neq" name="neq"
+                   placeholder="1234567890"
+                   value="{{ form.get('neq','') }}">
+            <div class="form-text">
+              {{ 'Optionnel. Affiche un badge « Entreprise certifiée » sur votre profil.' if lang == 'fr'
+                 else 'Optional. Displays a Certified Business badge on your profile.' }}
+            </div>
+          </div>
+
+          <hr class="border-subtle mb-4">
+          <h2 class="h6 text-muted text-uppercase mb-3">{{ 'Votre compte' if lang == 'fr' else 'Your Account' }}</h2>
+
+          <div class="mb-3">
+            <label class="form-label" for="email">{{ 'Courriel *' if lang == 'fr' else 'Email Address *' }}</label>
+            <input class="form-control" type="email" id="email" name="email"
+                   value="{{ form.get('email','') }}" autocomplete="email" required>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label" for="password">{{ 'Mot de passe *' if lang == 'fr' else 'Password *' }}</label>
+            <input class="form-control" type="password" id="password" name="password"
+                   placeholder="8+ {{ 'caractères' if lang == 'fr' else 'characters' }}"
+                   autocomplete="new-password" required>
+          </div>
+
+          <div class="mb-4">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="tos" name="tos" required>
+              <label class="form-check-label small text-muted" for="tos">
+                {{ 'J\'accepte les' if lang == 'fr' else 'I agree to the' }}
+                <a href="{{ url_for('public.tos') }}" target="_blank" class="text-accent">{{ 'conditions d\'utilisation' if lang == 'fr' else 'Terms of Service' }}</a>
+                {{ 'et la' if lang == 'fr' else 'and' }}
+                <a href="{{ url_for('public.privacy') }}" target="_blank" class="text-accent">{{ 'politique de confidentialité' if lang == 'fr' else 'Privacy Policy' }}</a>.
+              </label>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-accent w-100 py-2">
+            {{ 'Créer mon compte' if lang == 'fr' else 'Create My Account' }}
+          </button>
+        </form>
+      </div>
+
+      <p class="text-center text-muted small mt-4">
+        {{ 'Déjà inscrit ?' if lang == 'fr' else 'Already have an account?' }}
+        <a href="{{ url_for('auth.login') }}" class="text-accent">{{ 'Se connecter' if lang == 'fr' else 'Sign in' }}</a>
+      </p>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

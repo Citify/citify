@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}{{ merchant.business_name }} — Citify{% endblock %}
+{% block meta_description %}{{ merchant.description_en[:150] if merchant.description_en else merchant.business_name + ' — Citify Montreal' }}{% endblock %}
+
+{% block content %}
+<!-- Merchant Header -->
+<div class="merchant-header">
+  <div class="container">
+    <div class="d-flex flex-wrap align-items-start gap-4">
+      {% if merchant.logo_url %}
+        <img src="{{ merchant.logo_url }}" alt="{{ merchant.business_name }}" class="merchant-header-logo">
+      {% else %}
+        <div class="merchant-header-logo-placeholder"><i class="bi bi-shop"></i></div>
+      {% endif %}
+      <div class="flex-grow-1">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+          <h1 class="h2 mb-0">{{ merchant.business_name }}</h1>
+          {% if merchant.is_verified %}
+            <span class="badge-verified"><i class="bi bi-patch-check-fill"></i> {{ 'Entreprise certifiée' if lang == 'fr' else 'Certified Business' }}</span>
+          {% endif %}
+        </div>
+        {% if merchant.category %}
+          <div class="text-muted small mb-2">
+            <i class="bi bi-tag me-1"></i>
+            {{ merchant.category.name_fr if lang == 'fr' else merchant.category.name_en }}
+            {% if merchant.subcategory %} &mdash; {{ merchant.subcategory.name_fr if lang == 'fr' else merchant.subcategory.name_en }}{% endif %}
+          </div>
+        {% endif %}
+        {% if merchant.neighbourhood or merchant.address %}
+          <div class="text-muted small mb-3">
+            <i class="bi bi-geo-alt me-1"></i>
+            {{ merchant.neighbourhood + ', ' if merchant.neighbourhood else '' }}{{ merchant.address }}
+          </div>
+        {% endif %}
+        <!-- Social Links -->
+        <div class="social-links d-flex flex-wrap gap-2">
+          {% if merchant.phone %}
+            <a href="tel:{{ merchant.phone }}" title="Call" aria-label="Phone"><i class="bi bi-telephone-fill"></i></a>
+          {% endif %}
+          {% if merchant.whatsapp %}
+            <a href="https://wa.me/{{ merchant.whatsapp|replace(' ','')|replace('-','')|replace('+','') }}" target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+          {% endif %}
+          {% if merchant.website %}
+            <a href="{{ merchant.website }}" target="_blank" rel="noopener nofollow" title="Website" aria-label="Website"><i class="bi bi-globe"></i></a>
+          {% endif %}
+          {% if merchant.instagram %}
+            <a href="https://instagram.com/{{ merchant.instagram|replace('@','') }}" target="_blank" rel="noopener nofollow" title="Instagram" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+          {% endif %}
+          {% if merchant.facebook %}
+            <a href="{{ merchant.facebook }}" target="_blank" rel="noopener nofollow" title="Facebook" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+          {% endif %}
+          <!-- Share button -->
+          <a href="https://wa.me/?text={{ (merchant.business_name + ' — ' + request.url)|urlencode }}" target="_blank" rel="noopener" title="{{ 'Partager' if lang == 'fr' else 'Share' }}" aria-label="Share on WhatsApp" style="background:var(--success);border-color:var(--success);color:#fff;">
+            <i class="bi bi-share-fill"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="container mt-4">
+  <div class="row g-4">
+
+    <!-- Left: Products -->
+    <div class="col-lg-8">
+      {% if merchant.description_en or merchant.description_fr %}
+        <div class="citify-card p-4 mb-4">
+          <h2 class="h5 mb-3">{{ 'À propos' if lang == 'fr' else 'About' }}</h2>
+          <p class="text-muted mb-0">{{ merchant.description_fr if lang == 'fr' and merchant.description_fr else merchant.description_en }}</p>
+        </div>
+      {% endif %}
+
+      <!-- Products -->
+      <div class="section-header">
+        <h2>{{ 'Produits & Services' if lang == 'fr' else 'Products & Services' }}</h2>
+        <span class="text-muted small">{{ products|length }} {{ 'résultats' if lang == 'fr' else 'results' }}</span>
+      </div>
+
+      {% if products %}
+        <div class="row g-3">
+          {% for product in products %}
+          <div class="col-6 col-md-4">
+            <a href="{{ url_for('public.product_detail', slug=merchant.slug, product_id=product.id) }}" class="text-decoration-none">
+              <div class="product-card">
+                {% if product.thumbnail %}
+                  <img src="{{ product.thumbnail }}" alt="{{ product.name(lang) }}" class="product-card-img" loading="lazy">
+                {% else %}
+                  <div class="product-card-img-placeholder"><i class="bi bi-image"></i></div>
+                {% endif %}
+                <div class="product-card-body">
+                  <div class="product-card-title">{{ product.name(lang) }}</div>
+                  {% if product.price_on_request or product.price is none %}
+                    <div class="product-card-price-request">{{ 'Sur demande' if lang == 'fr' else 'Price on request' }}</div>
+                  {% else %}
+                    <div class="product-card-price">${{ "%.2f"|format(product.price) }}</div>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <nav class="mt-4" aria-label="Products pagination">
+          <ul class="pagination citify-pagination justify-content-center">
+            {% if pagination.has_prev %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ pagination.prev_num }}"><i class="bi bi-chevron-left"></i></a>
+              </li>
+            {% endif %}
+            {% for p in pagination.iter_pages() %}
+              {% if p %}
+                <li class="page-item {{ 'active' if p == pagination.page }}">
+                  <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            {% if pagination.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ pagination.next_num }}"><i class="bi bi-chevron-right"></i></a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+
+      {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-box-seam fs-1 d-block mb-3"></i>
+          <p>{{ 'Aucun produit pour l\'instant.' if lang == 'fr' else 'No products listed yet.' }}</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Right: Map + NEQ + Flag -->
+    <div class="col-lg-4">
+      {% if merchant.latitude and merchant.longitude %}
+        <div class="citify-card p-3 mb-4">
+          <h3 class="h6 mb-3"><i class="bi bi-geo-alt-fill text-accent me-2"></i>{{ 'Localisation' if lang == 'fr' else 'Location' }}</h3>
+          <div id="citify-map" class="citify-map"></div>
+          {% if merchant.address %}
+            <p class="text-muted small mt-2 mb-0"><i class="bi bi-geo me-1"></i>{{ merchant.address }}, Montréal</p>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {% if merchant.neq %}
+        <div class="citify-card p-3 mb-4">
+          <h3 class="h6 mb-2"><i class="bi bi-building-check text-accent me-2"></i>{{ 'Numéro d\'entreprise' if lang == 'fr' else 'Business Number' }}</h3>
+          <p class="text-muted small mb-1">NEQ: <strong class="text-primary">{{ merchant.neq }}</strong></p>
+          <a href="https://www.registreentreprises.gouv.qc.ca/en/consulting/company-info/default.aspx?st=1&RCN={{ merchant.neq }}" target="_blank" rel="noopener" class="small text-accent">
+            {{ 'Vérifier au REQ' if lang == 'fr' else 'Verify at REQ' }} <i class="bi bi-box-arrow-up-right ms-1"></i>
+          </a>
+        </div>
+      {% endif %}
+
+      <!-- Report -->
+      <div class="citify-card p-3">
+        <h3 class="h6 mb-3 text-muted"><i class="bi bi-flag me-2"></i>{{ 'Signaler ce commerce' if lang == 'fr' else 'Report this listing' }}</h3>
+        <form action="{{ url_for('public.flag_merchant', merchant_id=merchant.id) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <select class="form-select form-select-sm mb-2" name="reason">
+            {% if lang == 'fr' %}
+              <option value="spam">Spam ou faux commerce</option>
+              <option value="closed">Commerce fermé</option>
+              <option value="inappropriate">Contenu inapproprié</option>
+              <option value="other">Autre</option>
+            {% else %}
+              <option value="spam">Spam or fake listing</option>
+              <option value="closed">Business is closed</option>
+              <option value="inappropriate">Inappropriate content</option>
+              <option value="other">Other</option>
+            {% endif %}
+          </select>
+          <button type="submit" class="btn btn-outline-secondary btn-sm w-100">
+            {{ 'Envoyer le signalement' if lang == 'fr' else 'Submit Report' }}
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if merchant.latitude and merchant.longitude %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    initMap({{ merchant.latitude }}, {{ merchant.longitude }}, {{ merchant.business_name|tojson }});
+  });
+</script>
+{% endif %}
+{% endblock %}

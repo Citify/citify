@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Tableau de bord' if lang == 'fr' else 'Dashboard' }} — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+
+  <!-- Header -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h1 class="h3 mb-1">{{ merchant.business_name }}</h1>
+      <p class="text-muted small mb-0">
+        {% if merchant.is_verified %}
+          <span class="badge-verified me-2"><i class="bi bi-patch-check-fill"></i> {{ 'Entreprise certifiée' if lang == 'fr' else 'Certified Business' }}</span>
+        {% endif %}
+        <a href="{{ url_for('public.merchant_profile', slug=merchant.slug) }}" class="text-accent" target="_blank">
+          <i class="bi bi-box-arrow-up-right me-1"></i>{{ 'Voir mon profil public' if lang == 'fr' else 'View public profile' }}
+        </a>
+      </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{{ url_for('merchant.edit_profile') }}" class="btn btn-outline-accent btn-sm">
+        <i class="bi bi-pencil me-1"></i>{{ 'Modifier le profil' if lang == 'fr' else 'Edit Profile' }}
+      </a>
+      <a href="{{ url_for('merchant.add_product') }}" class="btn btn-accent btn-sm">
+        <i class="bi bi-plus-lg me-1"></i>{{ 'Ajouter un produit' if lang == 'fr' else 'Add Product' }}
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="dashboard-stat">
+        <div class="stat-number">{{ products|length }}</div>
+        <div class="stat-label">{{ 'Produits' if lang == 'fr' else 'Products' }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="dashboard-stat">
+        <div class="stat-number" style="color:var(--success)">{{ '✓' if merchant.is_verified else '—' }}</div>
+        <div class="stat-label">{{ 'Statut NEQ' if lang == 'fr' else 'NEQ Status' }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="dashboard-stat">
+        <div class="stat-number" style="font-size:1.5rem;">
+          {% set socials = [merchant.whatsapp, merchant.instagram, merchant.facebook, merchant.website, merchant.phone] %}
+          {{ socials|select|list|length }}
+        </div>
+        <div class="stat-label">{{ 'Liens sociaux' if lang == 'fr' else 'Social Links' }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="dashboard-stat">
+        <div class="stat-number" style="font-size:1.5rem;">{{ '📍' if merchant.latitude else '—' }}</div>
+        <div class="stat-label">{{ 'Carte active' if lang == 'fr' else 'Map Active' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import shortcuts -->
+  <div class="citify-card p-3 mb-4">
+    <h2 class="h6 text-muted text-uppercase mb-3">{{ 'Importer des produits' if lang == 'fr' else 'Import Products' }}</h2>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{{ url_for('merchant.import_csv') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-filetype-csv me-1"></i>CSV
+      </a>
+      <a href="{{ url_for('merchant.import_website') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-globe me-1"></i>{{ 'Depuis mon site web' if lang == 'fr' else 'From my website' }}
+      </a>
+      <a href="{{ url_for('merchant.add_product') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-camera me-1"></i>{{ 'Ajouter manuellement' if lang == 'fr' else 'Add manually' }}
+      </a>
+    </div>
+  </div>
+
+  <!-- Profile completeness nudge -->
+  {% if not merchant.description_en and not merchant.description_fr %}
+  <div class="alert alert-danger d-flex align-items-center gap-2 mb-4">
+    <i class="bi bi-exclamation-circle-fill"></i>
+    <span>
+      {{ 'Votre profil n\'a pas encore de description. ' if lang == 'fr' else 'Your profile has no description yet. ' }}
+      <a href="{{ url_for('merchant.edit_profile') }}" class="text-accent fw-600">{{ 'Compléter maintenant →' if lang == 'fr' else 'Complete now →' }}</a>
+    </span>
+  </div>
+  {% endif %}
+
+  <!-- Products list -->
+  <div class="section-header">
+    <h2>{{ 'Mes produits' if lang == 'fr' else 'My Products' }}</h2>
+    <a href="{{ url_for('merchant.add_product') }}" class="btn btn-accent btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>{{ 'Ajouter' if lang == 'fr' else 'Add' }}
+    </a>
+  </div>
+
+  {% if products %}
+    <div class="row g-3">
+      {% for product in products %}
+      <div class="col-6 col-md-4 col-lg-3">
+        <div class="product-card">
+          {% if product.thumbnail %}
+            <img src="{{ product.thumbnail }}" alt="{{ product.name(lang) }}" class="product-card-img" loading="lazy">
+          {% else %}
+            <div class="product-card-img-placeholder"><i class="bi bi-image"></i></div>
+          {% endif %}
+          <div class="product-card-body">
+            <div class="product-card-title">{{ product.name(lang) }}</div>
+            {% if product.price_on_request or product.price is none %}
+              <div class="product-card-price-request">{{ 'Sur demande' if lang == 'fr' else 'On request' }}</div>
+            {% else %}
+              <div class="product-card-price">${{ "%.2f"|format(product.price) }}</div>
+            {% endif %}
+            <div class="d-flex gap-1 mt-2">
+              <a href="{{ url_for('merchant.edit_product', product_id=product.id) }}" class="btn btn-outline-secondary btn-sm flex-grow-1" style="font-size:0.75rem;">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form method="post" action="{{ url_for('merchant.delete_product', product_id=product.id) }}" class="flex-grow-1"
+                    onsubmit="return confirm('{{ 'Supprimer ce produit ?' if lang == 'fr' else 'Delete this product?' }}')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline-danger btn-sm w-100" style="font-size:0.75rem;">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-box-seam fs-1 d-block mb-3"></i>
+      <p>{{ 'Aucun produit pour l\'instant. Ajoutez votre premier produit !' if lang == 'fr' else 'No products yet. Add your first product!' }}</p>
+      <a href="{{ url_for('merchant.add_product') }}" class="btn btn-accent mt-2">
+        <i class="bi bi-plus-lg me-1"></i>{{ 'Ajouter un produit' if lang == 'fr' else 'Add a Product' }}
+      </a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

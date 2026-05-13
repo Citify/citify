@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ 'À propos' if lang == 'fr' else 'About' }} — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-7">
+      <h1 class="h2 mb-4">{{ 'À propos de Citify' if lang == 'fr' else 'About Citify' }}</h1>
+      <div class="citify-form-card">
+        {% if lang == 'fr' %}
+          <p>Citify est un répertoire bilingue gratuit de commerces locaux montréalais, créé pour connecter les résidents de Montréal avec les commerçants de leur quartier.</p>
+          <p>Le projet est développé et maintenu par <a href="https://leshley.ca" target="_blank" class="text-accent">Leshley.ca</a>, une plateforme éducative indépendante de Montréal.</p>
+          <p>Citify est construit sur des outils libres et auto-hébergés. Aucune publicité. Aucun algorithme de manipulation. Juste un annuaire communautaire honnête.</p>
+          <h2 class="h5 mt-4 mb-3">Nous soutenir</h2>
+          <p>Si Citify vous est utile, vous pouvez soutenir le projet avec un don. Cela aide à maintenir Citify et le projet éducatif Leshley.ca.</p>
+          <a href="https://ko-fi.com/citify" target="_blank" rel="noopener" class="btn btn-outline-accent">
+            <i class="bi bi-heart-fill text-danger me-1"></i>Soutenir Citify
+          </a>
+        {% else %}
+          <p>Citify is a free bilingual directory of local Montreal businesses, built to connect residents with merchants in their neighbourhood.</p>
+          <p>The project is developed and maintained by <a href="https://leshley.ca" target="_blank" class="text-accent">Leshley.ca</a>, an independent Montreal educational platform.</p>
+          <p>Citify is built on open source, self-hosted tools. No ads. No algorithmic manipulation. Just an honest community directory.</p>
+          <h2 class="h5 mt-4 mb-3">Support Us</h2>
+          <p>If Citify is useful to you, consider supporting the project with a donation. It helps maintain Citify and the Leshley.ca education project.</p>
+          <a href="https://ko-fi.com/citify" target="_blank" rel="noopener" class="btn btn-outline-accent">
+            <i class="bi bi-heart-fill text-danger me-1"></i>Support Citify
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

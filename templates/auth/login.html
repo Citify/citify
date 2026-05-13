@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Connexion' if lang == 'fr' else 'Login' }} — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-sm-9 col-md-7 col-lg-5">
+
+      <div class="text-center mb-4">
+        <a href="{{ url_for('public.index') }}" class="citify-logo justify-content-center mb-3 d-flex">
+          <svg width="28" height="36" viewBox="0 0 64 80" xmlns="http://www.w3.org/2000/svg">
+            <path d="M32 2C18 2 8 13 8 26C8 44 32 78 32 78C32 78 56 44 56 26C56 13 46 2 32 2Z" fill="#e94560"/>
+            <circle cx="32" cy="26" r="11" fill="#1a1a2e"/>
+          </svg>
+          <span>citify</span>
+        </a>
+        <h1 class="h4">{{ 'Connexion' if lang == 'fr' else 'Sign in to your account' }}</h1>
+        <p class="text-muted small">{{ 'Accédez à votre tableau de bord commerçant.' if lang == 'fr' else 'Access your merchant dashboard.' }}</p>
+      </div>
+
+      <div class="citify-form-card">
+        {% if error %}
+          <div class="alert alert-danger mb-4">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('auth.login') }}" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="mb-3">
+            <label class="form-label" for="email">{{ 'Courriel' if lang == 'fr' else 'Email address' }}</label>
+            <input class="form-control" type="email" id="email" name="email"
+                   placeholder="{{ 'votre@courriel.com' if lang == 'fr' else 'your@email.com' }}"
+                   autocomplete="email" required>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label" for="password">{{ 'Mot de passe' if lang == 'fr' else 'Password' }}</label>
+            <input class="form-control" type="password" id="password" name="password"
+                   placeholder="••••••••" autocomplete="current-password" required>
+          </div>
+
+          <button type="submit" class="btn btn-accent w-100 py-2">
+            {{ 'Se connecter' if lang == 'fr' else 'Sign In' }}
+          </button>
+        </form>
+      </div>
+
+      <p class="text-center text-muted small mt-4">
+        {{ 'Pas encore de compte ?' if lang == 'fr' else "Don't have an account?" }}
+        <a href="{{ url_for('auth.register') }}" class="text-accent">
+          {{ 'Inscrivez votre commerce' if lang == 'fr' else 'List your business' }}
+        </a>
+      </p>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

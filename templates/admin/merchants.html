@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Admin — Merchants — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h1 class="h4 mb-0">{{ 'Tous les commerces' if lang == 'fr' else 'All Merchants' }}</h1>
+    <span class="text-muted small ms-auto">{{ merchants.total }} {{ 'total' }}</span>
+  </div>
+
+  <div class="citify-card" style="overflow:hidden;">
+    <div class="table-responsive">
+      <table class="table mb-0" style="color:var(--text-primary);">
+        <thead style="background:var(--bg-elevated);">
+          <tr>
+            <th>{{ 'Commerce' if lang == 'fr' else 'Business' }}</th>
+            <th>NEQ</th>
+            <th>{{ 'Produits' if lang == 'fr' else 'Products' }}</th>
+            <th>{{ 'Inscrit le' if lang == 'fr' else 'Registered' }}</th>
+            <th>{{ 'Statut' if lang == 'fr' else 'Status' }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in merchants.items %}
+          <tr style="border-color:var(--border);">
+            <td>
+              <a href="{{ url_for('public.merchant_profile', slug=m.slug) }}" target="_blank" class="text-accent fw-600">
+                {{ m.business_name }}
+              </a>
+              <div class="text-muted small">{{ m.email }}</div>
+              {% if m.neighbourhood %}<div class="text-muted small"><i class="bi bi-geo-alt me-1"></i>{{ m.neighbourhood }}</div>{% endif %}
+            </td>
+            <td>
+              {% if m.neq %}
+                <span class="badge-verified"><i class="bi bi-patch-check-fill"></i> {{ m.neq }}</span>
+              {% else %}
+                <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
+            <td class="text-muted">{{ m.product_count() }}</td>
+            <td class="text-muted small">{{ m.created_at.strftime('%Y-%m-%d') }}</td>
+            <td>
+              {% if m.is_active %}
+                <span class="badge" style="background:rgba(46,204,113,0.15);color:var(--success);">{{ 'Actif' if lang == 'fr' else 'Active' }}</span>
+              {% else %}
+                <span class="badge bg-danger">{{ 'Inactif' if lang == 'fr' else 'Inactive' }}</span>
+              {% endif %}
+              {% if m.flag_count > 0 %}
+                <span class="badge bg-warning text-dark ms-1"><i class="bi bi-flag-fill"></i> {{ m.flag_count }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if m.is_active %}
+              <form method="post" action="{{ url_for('admin.deactivate_merchant', merchant_id=m.id) }}" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-outline-danger btn-sm">{{ 'Désactiver' if lang == 'fr' else 'Deactivate' }}</button>
+              </form>
+              {% else %}
+              <form method="post" action="{{ url_for('admin.activate_merchant', merchant_id=m.id) }}" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-outline-success btn-sm">{{ 'Activer' if lang == 'fr' else 'Activate' }}</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if merchants.pages > 1 %}
+  <nav class="mt-4">
+    <ul class="pagination citify-pagination justify-content-center">
+      {% if merchants.has_prev %}
+        <li class="page-item"><a class="page-link" href="?page={{ merchants.prev_num }}"><i class="bi bi-chevron-left"></i></a></li>
+      {% endif %}
+      {% for p in merchants.iter_pages() %}
+        {% if p %}
+          <li class="page-item {{ 'active' if p == merchants.page }}">
+            <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+      {% if merchants.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ merchants.next_num }}"><i class="bi bi-chevron-right"></i></a></li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+
+</div>
+{% endblock %}

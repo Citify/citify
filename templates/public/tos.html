@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Conditions d\'utilisation' if lang == 'fr' else 'Terms of Service' }} — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+      <h1 class="h2 mb-2">{{ 'Conditions d\'utilisation' if lang == 'fr' else 'Terms of Service' }}</h1>
+      <p class="text-muted small mb-4">{{ 'Dernière mise à jour : mai 2026' if lang == 'fr' else 'Last updated: May 2026' }}</p>
+      <div class="citify-form-card">
+
+        <h2 class="h5 text-accent">1. {{ 'Répertoire seulement' if lang == 'fr' else 'Directory Only' }}</h2>
+        <p class="text-muted">{{ 'Citify.ca est une plateforme de répertoire uniquement, et non une place de marché. Toutes les transactions ont lieu exclusivement hors plateforme entre le commerçant et le client. Citify n\'assume aucune responsabilité pour toute transaction, litige ou résultat entre commerçants et résidents.' if lang == 'fr' else 'Citify.ca is a directory platform only, not a marketplace. All transactions occur exclusively off-platform between merchant and client. Citify bears no responsibility for any transaction, dispute, or outcome between merchants and residents.' }}</p>
+
+        <h2 class="h5 text-accent mt-4">2. {{ 'Responsabilité du contenu' if lang == 'fr' else 'Merchant Content Responsibility' }}</h2>
+        <p class="text-muted">{{ 'Les commerçants garantissent qu\'ils sont propriétaires de tout le contenu téléchargé, y compris les images. Les commerçants sont seuls responsables de l\'exactitude de leurs annonces. La fausse publicité est la responsabilité légale du commerçant. Citify se réserve le droit de supprimer toute annonce à tout moment sans préavis.' if lang == 'fr' else 'Merchants warrant they own all uploaded content including images. Merchants are solely responsible for the accuracy of their listings. False advertising is the merchant\'s legal responsibility. Citify reserves the right to remove any listing at any time without notice.' }}</p>
+
+        <h2 class="h5 text-accent mt-4">3. NEQ</h2>
+        <p class="text-muted">{{ 'Les commerçants qui fournissent un NEQ garantissent qu\'il s\'agit de leur propre numéro d\'entreprise du Québec valide. L\'utilisation frauduleuse du NEQ d\'une autre entreprise est une violation légale et Citify.ca n\'en assume aucune responsabilité.' if lang == 'fr' else 'Merchants who provide an NEQ warrant that it is their own valid Quebec business number. Fraudulent use of another business\'s NEQ is a legal violation and Citify.ca bears no responsibility.' }}</p>
+
+        <h2 class="h5 text-accent mt-4">4. {{ 'Droit d\'auteur' if lang == 'fr' else 'Copyright' }}</h2>
+        <p class="text-muted">{{ 'Les commerçants garantissent détenir les droits sur toutes les images et contenus téléchargés. Citify répondra rapidement aux demandes de retrait légitimes. Les contrevenants récidivistes seront définitivement bannis.' if lang == 'fr' else 'Merchants warrant they hold rights to all uploaded images and content. Citify will respond to legitimate takedown requests promptly. Repeat infringers will be permanently banned.' }}</p>
+
+        <h2 class="h5 text-accent mt-4">5. {{ 'Limitation de responsabilité' if lang == 'fr' else 'Limitation of Liability' }}</h2>
+        <p class="text-muted">{{ 'La responsabilité de Citify est limitée dans la mesure maximale permise par la loi du Québec. Citify n\'est pas responsable des actions des commerçants, des fausses annonces ou des litiges entre clients. La plateforme est fournie telle quelle, sans garantie.' if lang == 'fr' else 'Citify\'s liability is limited to the maximum extent permitted by Quebec law. Citify is not liable for merchant actions, false listings, or client disputes. Platform provided as-is without warranties.' }}</p>
+
+        <h2 class="h5 text-accent mt-4">6. {{ 'Droit applicable' if lang == 'fr' else 'Governing Law' }}</h2>
+        <p class="text-muted">{{ 'La plateforme est régie par les lois du Québec et du Canada. Les litiges sont soumis à la juridiction du Québec.' if lang == 'fr' else 'Platform governed by the laws of Quebec and Canada. Disputes subject to Quebec jurisdiction.' }}</p>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
