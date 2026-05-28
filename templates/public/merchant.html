@@ -110,8 +110,10 @@
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
-                <button class="dropdown-item" id="copy-link-btn"
-                        onclick="copyPageLink(this, '{{ 'Lien copié !' if lang == \"fr\" else 'Copied!' }}', '{{ 'Copier le lien' if lang == \"fr\" else 'Copy link' }}')">
+                <button class="dropdown-item"
+                        data-success="{{ 'Lien copié !' if lang == 'fr' else 'Copied!' }}"
+                        data-label="{{ 'Copier le lien' if lang == 'fr' else 'Copy link' }}"
+                        onclick="copyPageLink(this)">
                   <i class="bi bi-link-45deg me-2"></i>{{ 'Copier le lien' if lang == 'fr' else 'Copy link' }}
                 </button>
               </li>
@@ -167,7 +169,6 @@
           {% endfor %}
         </div>
 
-        <!-- Pagination -->
         {% if pagination.pages > 1 %}
         <nav class="mt-4" aria-label="Products pagination">
           <ul class="pagination citify-pagination justify-content-center">
@@ -261,14 +262,15 @@
 </script>
 {% endif %}
 <script>
-function copyPageLink(btn, successMsg, defaultMsg) {
+function copyPageLink(btn) {
+  var successMsg = btn.getAttribute('data-success');
+  var defaultMsg = btn.getAttribute('data-label');
   navigator.clipboard.writeText(window.location.href).then(function() {
     btn.innerHTML = '<i class="bi bi-check-lg me-2 text-success"></i>' + successMsg;
     setTimeout(function() {
       btn.innerHTML = '<i class="bi bi-link-45deg me-2"></i>' + defaultMsg;
     }, 1500);
   }).catch(function() {
-    // Fallback for browsers without clipboard API
     var el = document.createElement('textarea');
     el.value = window.location.href;
     document.body.appendChild(el);
