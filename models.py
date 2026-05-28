@@ -63,6 +63,8 @@ class Merchant(db.Model, UserMixin):
     whatsapp         = db.Column(db.String(50), default='')
     instagram        = db.Column(db.String(150), default='')
     facebook         = db.Column(db.String(300), default='')
+    # RSS feed for product import
+    rss_url          = db.Column(db.String(500), default='')
     # Status
     is_active        = db.Column(db.Boolean, default=True)
     is_admin         = db.Column(db.Boolean, default=False)
