@@ -32,27 +32,91 @@
             {{ merchant.neighbourhood + ', ' if merchant.neighbourhood else '' }}{{ merchant.address }}
           </div>
         {% endif %}
-        <!-- Social Links -->
+
+        <!-- Social / Contact Links -->
         <div class="social-links d-flex flex-wrap gap-2">
           {% if merchant.phone %}
-            <a href="tel:{{ merchant.phone }}" title="Call" aria-label="Phone"><i class="bi bi-telephone-fill"></i></a>
+            <a href="tel:{{ merchant.phone }}"
+               title="{{ 'Appeler' if lang == 'fr' else 'Call' }}"
+               aria-label="Phone">
+              <i class="bi bi-telephone-fill"></i>
+            </a>
           {% endif %}
           {% if merchant.whatsapp %}
-            <a href="https://wa.me/{{ merchant.whatsapp|replace(' ','')|replace('-','')|replace('+','') }}" target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+            <a href="https://wa.me/{{ merchant.whatsapp|replace(' ','')|replace('-','')|replace('+','') }}"
+               target="_blank" rel="noopener"
+               title="WhatsApp" aria-label="WhatsApp">
+              <i class="bi bi-whatsapp"></i>
+            </a>
           {% endif %}
           {% if merchant.website %}
-            <a href="{{ merchant.website }}" target="_blank" rel="noopener nofollow" title="Website" aria-label="Website"><i class="bi bi-globe"></i></a>
+            <a href="{{ merchant.website }}"
+               target="_blank" rel="noopener nofollow"
+               title="{{ 'Site web' if lang == 'fr' else 'Website' }}" aria-label="Website">
+              <i class="bi bi-globe"></i>
+            </a>
           {% endif %}
           {% if merchant.instagram %}
-            <a href="https://instagram.com/{{ merchant.instagram|replace('@','') }}" target="_blank" rel="noopener nofollow" title="Instagram" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+            <a href="https://instagram.com/{{ merchant.instagram|replace('@','') }}"
+               target="_blank" rel="noopener nofollow"
+               title="Instagram" aria-label="Instagram">
+              <i class="bi bi-instagram"></i>
+            </a>
           {% endif %}
           {% if merchant.facebook %}
-            <a href="{{ merchant.facebook }}" target="_blank" rel="noopener nofollow" title="Facebook" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+            <a href="{{ merchant.facebook }}"
+               target="_blank" rel="noopener nofollow"
+               title="Facebook" aria-label="Facebook">
+              <i class="bi bi-facebook"></i>
+            </a>
           {% endif %}
-          <!-- Share button -->
-          <a href="https://wa.me/?text={{ (merchant.business_name + ' — ' + request.url)|urlencode }}" target="_blank" rel="noopener" title="{{ 'Partager' if lang == 'fr' else 'Share' }}" aria-label="Share on WhatsApp" style="background:var(--success);border-color:var(--success);color:#fff;">
-            <i class="bi bi-share-fill"></i>
-          </a>
+
+          <!-- Share dropdown -->
+          <div class="dropdown">
+            <button class="social-share-btn"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                    title="{{ 'Partager' if lang == 'fr' else 'Share' }}"
+                    aria-label="{{ 'Partager' if lang == 'fr' else 'Share' }}">
+              <i class="bi bi-share-fill"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end citify-share-menu">
+              <li>
+                <a class="dropdown-item"
+                   href="https://wa.me/?text={{ (merchant.business_name ~ ' — ' ~ request.url)|urlencode }}"
+                   target="_blank" rel="noopener">
+                  <i class="bi bi-whatsapp text-success me-2"></i>WhatsApp
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item"
+                   href="https://www.facebook.com/sharer/sharer.php?u={{ request.url|urlencode }}"
+                   target="_blank" rel="noopener">
+                  <i class="bi bi-facebook me-2" style="color:#1877f2;"></i>Facebook
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item"
+                   href="https://twitter.com/intent/tweet?text={{ (merchant.business_name ~ ' — Citify')|urlencode }}&url={{ request.url|urlencode }}"
+                   target="_blank" rel="noopener">
+                  <i class="bi bi-twitter-x me-2"></i>X / Twitter
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item"
+                   href="mailto:?subject={{ merchant.business_name|urlencode }}&body={{ request.url|urlencode }}">
+                  <i class="bi bi-envelope me-2"></i>{{ 'Courriel' if lang == 'fr' else 'Email' }}
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <button class="dropdown-item" id="copy-link-btn"
+                        onclick="copyPageLink(this, '{{ 'Lien copié !' if lang == \"fr\" else 'Copied!' }}', '{{ 'Copier le lien' if lang == \"fr\" else 'Copy link' }}')">
+                  <i class="bi bi-link-45deg me-2"></i>{{ 'Copier le lien' if lang == 'fr' else 'Copy link' }}
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -63,7 +127,7 @@
 <div class="container mt-4">
   <div class="row g-4">
 
-    <!-- Left: Products -->
+    <!-- Left: About + Products -->
     <div class="col-lg-8">
       {% if merchant.description_en or merchant.description_fr %}
         <div class="citify-card p-4 mb-4">
@@ -79,7 +143,7 @@
       </div>
 
       {% if products %}
-        <div class="row g-3">
+        <div class="row g-3 product-grid">
           {% for product in products %}
           <div class="col-6 col-md-4">
             <a href="{{ url_for('public.product_detail', slug=merchant.slug, product_id=product.id) }}" class="text-decoration-none">
@@ -152,7 +216,8 @@
         <div class="citify-card p-3 mb-4">
           <h3 class="h6 mb-2"><i class="bi bi-building-check text-accent me-2"></i>{{ 'Numéro d\'entreprise' if lang == 'fr' else 'Business Number' }}</h3>
           <p class="text-muted small mb-1">NEQ: <strong class="text-primary">{{ merchant.neq }}</strong></p>
-          <a href="https://www.registreentreprises.gouv.qc.ca/en/consulting/company-info/default.aspx?st=1&RCN={{ merchant.neq }}" target="_blank" rel="noopener" class="small text-accent">
+          <a href="https://www.registreentreprises.gouv.qc.ca/en/consulting/company-info/default.aspx?st=1&RCN={{ merchant.neq }}"
+             target="_blank" rel="noopener" class="small text-accent">
             {{ 'Vérifier au REQ' if lang == 'fr' else 'Verify at REQ' }} <i class="bi bi-box-arrow-up-right ms-1"></i>
           </a>
         </div>
@@ -195,4 +260,26 @@
   });
 </script>
 {% endif %}
+<script>
+function copyPageLink(btn, successMsg, defaultMsg) {
+  navigator.clipboard.writeText(window.location.href).then(function() {
+    btn.innerHTML = '<i class="bi bi-check-lg me-2 text-success"></i>' + successMsg;
+    setTimeout(function() {
+      btn.innerHTML = '<i class="bi bi-link-45deg me-2"></i>' + defaultMsg;
+    }, 1500);
+  }).catch(function() {
+    // Fallback for browsers without clipboard API
+    var el = document.createElement('textarea');
+    el.value = window.location.href;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    btn.innerHTML = '<i class="bi bi-check-lg me-2 text-success"></i>' + successMsg;
+    setTimeout(function() {
+      btn.innerHTML = '<i class="bi bi-link-45deg me-2"></i>' + defaultMsg;
+    }, 1500);
+  });
+}
+</script>
 {% endblock %}
