@@ -53,7 +53,8 @@ def create_app():
         'font-src':    ["'self'", 'fonts.gstatic.com', 'fonts.googleapis.com'],
         'img-src':     ["'self'", 'data:', '*.backblazeb2.com',
                         '*.tile.openstreetmap.org', 'unpkg.com'],
-        'connect-src': ["'self'"],
+        # Added *.tile.openstreetmap.org so Leaflet can fetch map tiles
+        'connect-src': ["'self'", '*.tile.openstreetmap.org'],
         'frame-src':   ["'none'"],
         'object-src':  ["'none'"],
     }
