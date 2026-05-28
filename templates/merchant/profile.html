@@ -119,6 +119,25 @@
           </div>
         </div>
 
+        <!-- RSS Feed -->
+        <div class="citify-form-card mb-4">
+          <h2 class="h6 text-muted text-uppercase mb-4">{{ 'Flux RSS produits' if lang == 'fr' else 'Product RSS Feed' }}</h2>
+          <div class="mb-0">
+            <label class="form-label"><i class="bi bi-rss me-1"></i>{{ 'URL du flux RSS' if lang == 'fr' else 'RSS Feed URL' }}</label>
+            <input class="form-control" type="url" name="rss_url" value="{{ merchant.rss_url }}"
+                   placeholder="https://votresite.com/?feed=rss2&post_type=product">
+            <div class="form-text">
+              {{ 'Enregistrez l\'URL de votre flux RSS pour importer vos produits rapidement.' if lang == 'fr'
+                 else 'Save your RSS feed URL to quickly import products from your website.' }}
+              {% if merchant.rss_url %}
+                <a href="{{ url_for('merchant.import_rss') }}" class="ms-2 text-accent">
+                  <i class="bi bi-box-arrow-up-right me-1"></i>{{ 'Importer maintenant' if lang == 'fr' else 'Import now' }}
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
         <!-- Logo -->
         <div class="citify-form-card mb-4">
           <h2 class="h6 text-muted text-uppercase mb-4">{{ 'Logo du commerce' if lang == 'fr' else 'Business Logo' }}</h2>
