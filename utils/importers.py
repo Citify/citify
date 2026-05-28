@@ -1,6 +1,8 @@
 import csv
 import io
+import re
 import requests
+import feedparser
 from bs4 import BeautifulSoup
 
 
@@ -39,6 +41,114 @@ def parse_csv(file_storage):
     return products
 
 
+def _parse_price(text):
+    """
+    Extract a float price from a string like '$12.99', '12,99 $', 'CAD 45.00'.
+    Returns (float, False) on success, (None, True) if no price found.
+    """
+    if not text:
+        return None, True
+    # Strip currency symbols and normalise
+    cleaned = re.sub(r'[^\d.,]', '', str(text)).replace(',', '.')
+    # Handle cases like '12.99.00' by taking the first valid number
+    match = re.search(r'\d+\.?\d*', cleaned)
+    if match:
+        try:
+            return float(match.group()), False
+        except ValueError:
+            pass
+    return None, True
+
+
+def import_from_rss(url):
+    """
+    Import products from an RSS/Atom feed URL.
+    Each feed entry becomes a product:
+      - entry.title      → name_en
+      - entry.summary    → description_en (HTML stripped)
+      - price tag        → price (checked in order: price_value, g:price,
+                           media:price, or parsed from title/summary)
+
+    Works with WooCommerce RSS, Shopify RSS, custom feeds, and any
+    standard RSS 2.0 / Atom feed.
+
+    Returns (list_of_product_dicts, error_string_or_None).
+    """
+    if not url.startswith('http'):
+        url = 'https://' + url
+
+    try:
+        feed = feedparser.parse(url)
+    except Exception as e:
+        return [], f"Could not parse feed: {e}"
+
+    if feed.bozo and not feed.entries:
+        # bozo means malformed, but feedparser still tries — only fail if no entries
+        return [], "Feed could not be read. Please check the URL and try again."
+
+    if not feed.entries:
+        return [], "Feed is empty or contains no products."
+
+    products = []
+    for entry in feed.entries[:50]:
+        name = entry.get('title', '').strip()
+        if not name:
+            continue
+
+        # Strip HTML from summary/description
+        raw_summary = entry.get('summary', '') or entry.get('description', '')
+        if raw_summary:
+            description = BeautifulSoup(raw_summary, 'html.parser').get_text(separator=' ', strip=True)[:500]
+        else:
+            description = ''
+
+        # Try to find a price in common RSS price tags
+        price = None
+        price_on_request = False
+
+        # WooCommerce / Google Shopping feed tags
+        price_candidates = [
+            entry.get('price_value'),               # custom
+            entry.get('g_price'),                   # Google Shopping
+            entry.get('price'),                     # generic
+        ]
+        # Also check tags list (feedparser puts custom namespaced tags here)
+        for tag in entry.get('tags', []):
+            term = tag.get('term', '')
+            if re.match(r'^\$?\d+[\d.,]*$', term.strip()):
+                price_candidates.append(term)
+
+        for candidate in price_candidates:
+            if candidate:
+                price, price_on_request = _parse_price(str(candidate))
+                if price is not None:
+                    break
+
+        # Last resort: look for a price pattern in the title itself
+        # e.g. "Widget Pro — $29.99"
+        if price is None:
+            match = re.search(r'\$\s*(\d+[\d.,]*)', name)
+            if match:
+                price, price_on_request = _parse_price(match.group(1))
+
+        if price is None:
+            price_on_request = True
+
+        products.append({
+            'name_en':          name,
+            'name_fr':          '',
+            'description_en':   description,
+            'description_fr':   '',
+            'price':            price,
+            'price_on_request': price_on_request,
+        })
+
+    if not products:
+        return [], "No products could be extracted from this feed."
+
+    return products, None
+
+
 def import_from_website(url):
     """
     Attempt to scrape products from a merchant website.
@@ -65,7 +175,7 @@ def import_from_website(url):
         for item in woo_items[:50]:
             name_tag  = item.select_one('.woocommerce-loop-product__title, h2')
             price_tag = item.select_one('.price .woocommerce-Price-amount, .price')
-            name  = name_tag.get_text(strip=True)  if name_tag  else ''
+            name      = name_tag.get_text(strip=True)  if name_tag  else ''
             price_text = price_tag.get_text(strip=True) if price_tag else ''
             if name:
                 price = None
