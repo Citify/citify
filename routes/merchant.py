@@ -4,7 +4,7 @@ from models import Product, ProductImage, Category
 from app import db, limiter, invalidate_public_cache
 from utils.lang import get_lang
 from utils.geocode import geocode
-from utils.importers import parse_csv, import_from_website
+from utils.importers import parse_csv, import_from_rss, import_from_website
 from utils.sanitise import clean_text, clean_rich, clean_url
 
 merchant_bp = Blueprint('merchant', __name__)
@@ -52,6 +52,7 @@ def edit_profile():
         current_user.whatsapp       = clean_text(request.form.get('whatsapp', ''))
         current_user.instagram      = clean_text(request.form.get('instagram', ''))
         current_user.facebook       = clean_url(request.form.get('facebook', ''))
+        current_user.rss_url        = clean_url(request.form.get('rss_url', ''))
 
         neq = clean_text(request.form.get('neq', ''))
         current_user.neq         = neq
@@ -196,7 +197,6 @@ def import_csv():
         products_data = parse_csv(f)
         count = 0
         for p in products_data:
-            # Sanitise imported data
             p['name_en']        = clean_text(p.get('name_en', ''))
             p['name_fr']        = clean_text(p.get('name_fr', ''))
             p['description_en'] = clean_rich(p.get('description_en', ''))
@@ -213,6 +213,69 @@ def import_csv():
     return render_template('merchant/import_csv.html', lang=lang)
 
 
+@merchant_bp.route('/import/rss', methods=['GET', 'POST'])
+@login_required
+@limiter.limit("10 per hour")
+def import_rss():
+    lang     = get_lang()
+    imported = []
+    error    = None
+
+    # Pre-fill URL from merchant's saved rss_url
+    prefill_url = current_user.rss_url or ''
+
+    if request.method == 'POST':
+        url = clean_url(request.form.get('url', ''))
+
+        # Save the RSS URL to the merchant profile for future use
+        if url and url != current_user.rss_url:
+            current_user.rss_url = url
+            db.session.commit()
+
+        if url:
+            if request.form.get('confirm') and request.form.get('imported_json'):
+                # Second POST — user confirmed the preview, do the actual import
+                import json
+                try:
+                    products_data = json.loads(request.form.get('imported_json'))
+                except Exception:
+                    flash('Import error. Please try again.', 'error')
+                    return redirect(url_for('merchant.import_rss'))
+
+                count = 0
+                for p in products_data:
+                    p['name_en']        = clean_text(p.get('name_en', ''))
+                    p['name_fr']        = clean_text(p.get('name_fr', ''))
+                    p['description_en'] = clean_rich(p.get('description_en', ''))
+                    p['description_fr'] = clean_rich(p.get('description_fr', ''))
+                    if not p['name_en']:
+                        continue
+                    product = Product(merchant_id=current_user.id,
+                                      name_en=p['name_en'],
+                                      name_fr=p['name_fr'],
+                                      description_en=p['description_en'],
+                                      description_fr=p['description_fr'],
+                                      price=p.get('price'),
+                                      price_on_request=p.get('price_on_request', True))
+                    db.session.add(product)
+                    count += 1
+                db.session.commit()
+                invalidate_public_cache()
+                flash(f'{count} products imported! / {count} produits importes!', 'success')
+                return redirect(url_for('merchant.dashboard'))
+            else:
+                # First POST — fetch and preview
+                imported, error = import_from_rss(url)
+                prefill_url = url
+
+    return render_template('merchant/import_rss.html',
+                           lang=lang,
+                           imported=imported,
+                           error=error,
+                           prefill_url=prefill_url)
+
+
+# Keep website import route for backwards compatibility
 @merchant_bp.route('/import/website', methods=['GET', 'POST'])
 @login_required
 @limiter.limit("5 per hour")
