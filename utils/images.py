@@ -23,8 +23,8 @@ def process_and_upload(file_storage):
     Takes a Flask file upload, compresses it into two sizes,
     uploads both to Backblaze B2, and returns (full_url, thumb_url).
     """
-    bucket = current_app.config['B2_BUCKET_NAME']
-    endpoint = current_app.config['B2_ENDPOINT_URL']
+    bucket   = current_app.config['B2_BUCKET_NAME']
+    endpoint = current_app.config['B2_ENDPOINT_URL'].rstrip('/')
 
     img = Image.open(file_storage)
 
@@ -47,7 +47,7 @@ def process_and_upload(file_storage):
     thumb_img.thumbnail(THUMBNAIL_SIZE, Image.LANCZOS)
     # Centre-crop to square
     w, h = thumb_img.size
-    side = min(w, h)
+    side  = min(w, h)
     left  = (w - side) // 2
     top   = (h - side) // 2
     thumb_img = thumb_img.crop((left, top, left + side, top + side))
@@ -60,17 +60,17 @@ def process_and_upload(file_storage):
     client.upload_fileobj(full_buf,  bucket, full_key,  ExtraArgs={'ContentType': 'image/jpeg'})
     client.upload_fileobj(thumb_buf, bucket, thumb_key, ExtraArgs={'ContentType': 'image/jpeg'})
 
-    base = endpoint.rstrip('/')
-    full_url  = f"{base}/file/{bucket}/{full_key}"
-    thumb_url = f"{base}/file/{bucket}/{thumb_key}"
+    # Correct Backblaze B2 public URL: endpoint/bucket/key
+    full_url  = f"{endpoint}/{bucket}/{full_key}"
+    thumb_url = f"{endpoint}/{bucket}/{thumb_key}"
 
     return full_url, thumb_url
 
 
 def upload_logo(file_storage, merchant_slug):
-    """Upload merchant logo/banner image."""
+    """Upload merchant logo image."""
     bucket   = current_app.config['B2_BUCKET_NAME']
-    endpoint = current_app.config['B2_ENDPOINT_URL']
+    endpoint = current_app.config['B2_ENDPOINT_URL'].rstrip('/')
 
     img = Image.open(file_storage)
     if img.mode in ('RGBA', 'P', 'LA'):
@@ -85,4 +85,5 @@ def upload_logo(file_storage, merchant_slug):
     client = get_b2_client()
     client.upload_fileobj(buf, bucket, key, ExtraArgs={'ContentType': 'image/jpeg'})
 
-    return f"{endpoint.rstrip('/')}/file/{bucket}/{key}"
+    # Correct Backblaze B2 public URL: endpoint/bucket/key
+    return f"{endpoint}/{bucket}/{key}"
