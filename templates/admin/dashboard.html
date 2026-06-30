@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+
+  <div class="section-header mb-4">
+    <h1 class="h3 mb-0"><i class="bi bi-shield-fill text-warning me-2"></i>Admin Dashboard</h1>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('admin.merchants') }}" class="btn btn-outline-warning btn-sm">
+        <i class="bi bi-star me-1"></i>{{ 'Commerces' if lang == 'fr' else 'Merchants' }}
+      </a>
+      <a href="{{ url_for('admin.seed_merchant') }}" class="btn btn-outline-success btn-sm">
+        <i class="bi bi-database-fill-add me-1"></i>Seed
+      </a>
+      <a href="{{ url_for('admin.flags') }}" class="btn btn-outline-accent btn-sm">
+        <i class="bi bi-flag me-1"></i>{{ 'Signalements' if lang == 'fr' else 'Flags' }}
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="row g-3 mb-5">
+    <div class="col-6 col-md-3">
+      <div class="dashboard-stat">
+        <div class="stat-number">{{ total_merchants }}</div>
+        <div class="stat-label">{{ 'Commerces actifs' if lang == 'fr' else 'Active Merchants' }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="dashboard-stat">
+        <div class="stat-number">{{ total_products }}</div>
+        <div class="stat-label">{{ 'Produits actifs' if lang == 'fr' else 'Active Products' }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="dashboard-stat">
+        <div class="stat-number text-warning">{{ flagged|length }}</div>
+        <div class="stat-label">{{ 'Commerces signalés' if lang == 'fr' else 'Flagged Merchants' }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="dashboard-stat">
+        <div class="stat-number" style="color:var(--success)">
+          {{ recent|selectattr('is_verified')|list|length }}
+        </div>
+        <div class="stat-label">{{ 'Certifiés récents' if lang == 'fr' else 'Recent Certified' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flagged merchants -->
+  {% if flagged %}
+  <div class="section-header mb-3">
+    <h2 class="h5 mb-0 text-warning"><i class="bi bi-flag-fill me-2"></i>{{ 'Commerces signalés' if lang == 'fr' else 'Flagged Merchants' }}</h2>
+  </div>
+  <div class="citify-card mb-5" style="overflow:hidden;">
+    <div class="table-responsive">
+      <table class="table mb-0" style="color:var(--text-primary);">
+        <thead style="background:var(--bg-elevated);">
+          <tr>
+            <th>{{ 'Commerce' if lang == 'fr' else 'Business' }}</th>
+            <th>{{ 'Signalements' if lang == 'fr' else 'Flags' }}</th>
+            <th>{{ 'Actions' if lang == 'fr' else 'Actions' }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in flagged %}
+          <tr style="border-color:var(--border);">
+            <td>
+              <a href="{{ url_for('public.merchant_profile', slug=m.slug) }}" target="_blank" class="text-accent">
+                {{ m.business_name }}
+              </a>
+              <div class="text-muted small">{{ m.email }}</div>
+            </td>
+            <td><span class="badge bg-danger">{{ m.flag_count }}</span></td>
+            <td>
+              <form method="post" action="{{ url_for('admin.deactivate_merchant', merchant_id=m.id) }}" class="d-inline"
+                    onsubmit="return confirm('Deactivate {{ m.business_name }}?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-danger btn-sm">{{ 'Désactiver' if lang == 'fr' else 'Deactivate' }}</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Recent merchants -->
+  <div class="section-header mb-3">
+    <h2 class="h5 mb-0">{{ 'Commerces récents' if lang == 'fr' else 'Recent Merchants' }}</h2>
+    <a href="{{ url_for('admin.merchants') }}" class="btn btn-outline-accent btn-sm">{{ 'Voir tout' if lang == 'fr' else 'View all' }}</a>
+  </div>
+  <div class="citify-card" style="overflow:hidden;">
+    <div class="table-responsive">
+      <table class="table mb-0" style="color:var(--text-primary);">
+        <thead style="background:var(--bg-elevated);">
+          <tr>
+            <th>{{ 'Commerce' if lang == 'fr' else 'Business' }}</th>
+            <th>{{ 'Statut' if lang == 'fr' else 'Status' }}</th>
+            <th>{{ 'Date' if lang == 'fr' else 'Date' }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in recent %}
+          <tr style="border-color:var(--border);">
+            <td>
+              <a href="{{ url_for('public.merchant_profile', slug=m.slug) }}" target="_blank" class="text-accent">{{ m.business_name }}</a>
+              <div class="text-muted small">{{ m.email }}</div>
+            </td>
+            <td>
+              {% if m.is_verified %}<span class="badge-verified"><i class="bi bi-patch-check-fill"></i> NEQ</span>{% endif %}
+              {% if not m.is_active %}<span class="badge bg-danger ms-1">{{ 'Inactif' if lang == 'fr' else 'Inactive' }}</span>{% endif %}
+            </td>
+            <td class="text-muted small">{{ m.created_at.strftime('%Y-%m-%d') }}</td>
+            <td>
+              {% if m.is_active %}
+              <form method="post" action="{{ url_for('admin.deactivate_merchant', merchant_id=m.id) }}" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-outline-danger btn-sm">{{ 'Désactiver' if lang == 'fr' else 'Deactivate' }}</button>
+              </form>
+              {% else %}
+              <form method="post" action="{{ url_for('admin.activate_merchant', merchant_id=m.id) }}" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-outline-success btn-sm">{{ 'Activer' if lang == 'fr' else 'Activate' }}</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Database
+*.db
+*.sqlite
+instance/
+
+# Environment / secrets
+.env
+app.env
+*.bak
+
+# Logs
+logs/
+*.log
+
+# Uploads / user content
+static/logos/
+static/products/
+
+# OS
+.DS_Store
+Thumbs.db

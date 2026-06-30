@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ neighbourhood_name }} — {{ 'Commerces locaux' if lang == 'fr' else 'Local Businesses' }} — Citify Montréal{% endblock %}
+{% block meta_description %}{{ 'Découvrez les commerces locaux de' if lang == 'fr' else 'Discover local businesses in' }} {{ neighbourhood_name }}, Montréal. {{ merchants|length }} {{ 'commerces listés sur Citify.' if lang == 'fr' else 'businesses listed on Citify.' }}{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "{{ 'Commerces locaux — ' if lang == 'fr' else 'Local Businesses — ' }}{{ neighbourhood_name }}, Montréal",
+  "description": "{{ 'Commerces indépendants de' if lang == 'fr' else 'Independent businesses in' }} {{ neighbourhood_name }}, Montréal",
+  "numberOfItems": {{ merchants|length }},
+  "itemListElement": [
+    {% for m in merchants %}
+    {
+      "@type": "ListItem",
+      "position": {{ loop.index }},
+      "name": {{ m.business_name | tojson }},
+      "url": {{ url_for('public.merchant_profile', slug=m.slug, _external=True) | tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('public.index') }}">{{ 'Accueil' if lang == 'fr' else 'Home' }}</a></li>
+      <li class="breadcrumb-item active">{{ neighbourhood_name }}</li>
+    </ol>
+  </nav>
+
+  <div class="section-header mb-4">
+    <div>
+      <h1 class="h3 mb-1"><i class="bi bi-geo-alt-fill text-accent me-2"></i>{{ neighbourhood_name }}</h1>
+      <p class="text-muted mb-0">
+        {{ 'Commerces locaux indépendants à' if lang == 'fr' else 'Independent local businesses in' }}
+        {{ neighbourhood_name }}, Montréal
+      </p>
+    </div>
+    <span class="text-muted small">{{ merchants|length }} {{ 'commerces' if lang == 'fr' else 'businesses' }}</span>
+  </div>
+
+  {% if merchants %}
+    <div class="row g-3">
+      {% for m in merchants %}
+      <div class="col-12 col-sm-6 col-lg-4">
+        <a href="{{ url_for('public.merchant_profile', slug=m.slug) }}" class="text-decoration-none">
+          <div class="merchant-card">
+            <div class="d-flex align-items-start gap-3 mb-3">
+              {% if m.logo_url %}
+                <img src="{{ m.logo_url }}" alt="{{ m.business_name }}" class="merchant-logo" loading="lazy">
+              {% else %}
+                <div class="merchant-logo-placeholder"><i class="bi bi-shop"></i></div>
+              {% endif %}
+              <div class="flex-grow-1 min-w-0">
+                <h2 class="h6 mb-1">{{ m.business_name }}</h2>
+                {% if m.is_verified %}
+                  <span class="badge-verified"><i class="bi bi-patch-check-fill"></i> {{ 'Certifié' if lang == 'fr' else 'Certified' }}</span>
+                {% endif %}
+              </div>
+            </div>
+            {% if m.description_fr or m.description_en %}
+              <p class="text-muted small mb-2">
+                {{ m.description_fr if lang == 'fr' and m.description_fr else m.description_en }}
+              </p>
+            {% endif %}
+            {% if m.category %}
+              <span class="badge" style="background:var(--bg-elevated);color:var(--text-muted);font-size:0.72rem;">
+                {{ m.category.name_fr if lang == 'fr' else m.category.name_en }}
+              </span>
+            {% endif %}
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-shop fs-1 d-block mb-3"></i>
+      <p class="fs-5">
+        {{ 'Aucun commerce listé dans ce quartier pour l\'instant.' if lang == 'fr'
+           else 'No businesses listed in this neighbourhood yet.' }}
+      </p>
+      <a href="{{ url_for('auth.register') }}" class="btn btn-accent mt-2">
+        {{ 'Inscrire mon commerce' if lang == 'fr' else 'List Your Business — Free' }}
+      </a>
+    </div>
+  {% endif %}
+
+  <!-- Other neighbourhoods -->
+  <div class="mt-5">
+    <h2 class="h5 mb-3">{{ 'Autres quartiers' if lang == 'fr' else 'Other Neighbourhoods' }}</h2>
+    <div class="d-flex flex-wrap gap-2">
+      {% for n in all_neighbourhoods %}
+        {% if n.slug != neighbourhood.slug %}
+          <a href="{{ url_for('public.neighbourhood', neighbourhood_slug=n.slug) }}"
+             class="btn btn-outline-secondary btn-sm">
+            {{ n.fr if lang == 'fr' else n.en }}
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

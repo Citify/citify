@@ -1,0 +1,815 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Trousse marketing' if lang == 'fr' else 'Marketing Kit' }} — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5" style="max-width:900px;">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ url_for('merchant.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+      <h1 class="h3 mb-0">{{ 'Trousse marketing' if lang == 'fr' else 'Marketing Kit' }}</h1>
+      <p class="text-muted small mb-0">
+        {{ 'Outils gratuits pour promouvoir votre commerce sur Citify.' if lang == 'fr'
+           else 'Free tools to promote your business on Citify.' }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Profile URL pill -->
+  <div class="citify-card p-3 mb-4 d-flex align-items-center gap-3 flex-wrap">
+    <span class="text-muted small">{{ 'Votre lien Citify :' if lang == 'fr' else 'Your Citify link:' }}</span>
+    <code style="color:var(--accent);font-size:0.9rem;">{{ profile_url }}</code>
+    <button class="btn btn-outline-accent btn-sm" onclick="copyUrl()">
+      <i class="bi bi-clipboard me-1"></i>{{ 'Copier' if lang == 'fr' else 'Copy' }}
+    </button>
+    <span id="copy-confirm" class="text-success small d-none">
+      <i class="bi bi-check2"></i> {{ 'Copié !' if lang == 'fr' else 'Copied!' }}
+    </span>
+  </div>
+
+  <!-- ① QR Code -->
+  <div class="citify-card p-4 mb-4">
+    <h2 class="h5 mb-1"><i class="bi bi-qr-code me-2"></i>{{ 'Code QR' if lang == 'fr' else 'QR Code' }}</h2>
+    <p class="text-muted small mb-3">
+      {{ 'Affichez-le en vitrine, sur vos menus ou vos emballages.' if lang == 'fr'
+         else 'Display it in your window, on menus, or packaging.' }}
+    </p>
+    <div class="d-flex flex-wrap align-items-start gap-4">
+      <div id="qr-container" style="background:#fff;padding:16px;border-radius:12px;display:inline-block;"></div>
+      <div class="d-flex flex-column gap-2 mt-2">
+        <button class="btn btn-accent btn-sm" onclick="downloadQR()">
+          <i class="bi bi-download me-1"></i>{{ 'Télécharger PNG' if lang == 'fr' else 'Download PNG' }}
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="printQR()">
+          <i class="bi bi-printer me-1"></i>{{ 'Imprimer' if lang == 'fr' else 'Print' }}
+        </button>
+        <div class="text-muted" style="font-size:0.75rem;max-width:160px;margin-top:4px;">
+          280×280 px · {{ 'prêt à imprimer' if lang == 'fr' else 'print-ready' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② Social Banners -->
+  <div class="citify-card p-4 mb-4">
+    <h2 class="h5 mb-1"><i class="bi bi-image me-2"></i>{{ 'Bannières pour réseaux sociaux' if lang == 'fr' else 'Social Media Banners' }}</h2>
+    <p class="text-muted small mb-3">
+      {{ 'Visuels prêts à partager sur Instagram, Facebook ou WhatsApp.' if lang == 'fr'
+         else 'Ready-to-share visuals for Instagram, Facebook, or WhatsApp.' }}
+    </p>
+
+    <!-- Format + language toggles -->
+    <div class="d-flex flex-wrap gap-2 mb-2">
+      <button class="btn btn-accent btn-sm"           id="tab-square" onclick="selectFormat('square')">Instagram (1:1)</button>
+      <button class="btn btn-outline-secondary btn-sm" id="tab-story"  onclick="selectFormat('story')">Story (9:16)</button>
+      <button class="btn btn-outline-secondary btn-sm" id="tab-cover"  onclick="selectFormat('cover')">{{ 'Couverture Facebook' if lang == 'fr' else 'Facebook Cover' }}</button>
+      <button class="btn btn-outline-secondary btn-sm" id="tab-wa"     onclick="selectFormat('wa')">WhatsApp / iMessage</button>
+    </div>
+    <div class="d-flex gap-2 mb-3">
+      <button class="btn btn-sm" id="lang-fr" onclick="selectLang('fr')"
+              style="background:var(--accent);color:#fff;border:none;">FR</button>
+      <button class="btn btn-outline-secondary btn-sm" id="lang-en" onclick="selectLang('en')">EN</button>
+    </div>
+
+    <div class="d-flex flex-wrap align-items-start gap-4">
+      <canvas id="banner-canvas" style="border-radius:12px;max-width:100%;max-height:380px;"></canvas>
+      <div class="d-flex flex-column gap-2 mt-2">
+        <button class="btn btn-accent btn-sm" onclick="downloadBanner()">
+          <i class="bi bi-download me-1"></i>{{ 'Télécharger PNG' if lang == 'fr' else 'Download PNG' }}
+        </button>
+        <div class="text-muted" style="font-size:0.75rem;max-width:160px;margin-top:4px;" id="banner-size-label">1080×1080 px</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ Email Signature Badge -->
+  <div class="citify-card p-4 mb-4">
+    <h2 class="h5 mb-1"><i class="bi bi-envelope me-2"></i>{{ 'Badge signature courriel' if lang == 'fr' else 'Email Signature Badge' }}</h2>
+    <p class="text-muted small mb-3">
+      {{ 'Ajoutez ce petit visuel à votre signature courriel.' if lang == 'fr'
+         else 'Add this small visual to your email signature.' }}
+    </p>
+    <div class="d-flex gap-2 mb-3">
+      <button class="btn btn-sm" id="sig-lang-fr" onclick="selectSigLang('fr')"
+              style="background:var(--accent);color:#fff;border:none;">FR</button>
+      <button class="btn btn-outline-secondary btn-sm" id="sig-lang-en" onclick="selectSigLang('en')">EN</button>
+    </div>
+    <div class="d-flex flex-wrap align-items-start gap-4">
+      <canvas id="sig-canvas" style="border-radius:8px;max-width:100%;"></canvas>
+      <div class="d-flex flex-column gap-2 mt-2">
+        <button class="btn btn-accent btn-sm" onclick="downloadSig()">
+          <i class="bi bi-download me-1"></i>{{ 'Télécharger PNG' if lang == 'fr' else 'Download PNG' }}
+        </button>
+        <div class="text-muted" style="font-size:0.75rem;max-width:160px;margin-top:4px;">600×150 px</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ Business Card Insert -->
+  <div class="citify-card p-4 mb-4">
+    <h2 class="h5 mb-1"><i class="bi bi-credit-card me-2"></i>{{ 'Encart carte de visite' if lang == 'fr' else 'Business Card Insert' }}</h2>
+    <p class="text-muted small mb-3">
+      {{ 'Format portefeuille (3.5×2 po). Imprimez et distribuez à vos clients.' if lang == 'fr'
+         else 'Wallet-size (3.5×2 in). Print and hand out to customers.' }}
+    </p>
+    <div class="d-flex gap-2 mb-3">
+      <button class="btn btn-sm" id="card-lang-fr" onclick="selectCardLang('fr')"
+              style="background:var(--accent);color:#fff;border:none;">FR</button>
+      <button class="btn btn-outline-secondary btn-sm" id="card-lang-en" onclick="selectCardLang('en')">EN</button>
+    </div>
+    <div class="d-flex flex-wrap align-items-start gap-4">
+      <canvas id="card-canvas" style="border-radius:8px;max-width:100%;border:1px solid #333;"></canvas>
+      <div class="d-flex flex-column gap-2 mt-2">
+        <button class="btn btn-accent btn-sm" onclick="downloadCard()">
+          <i class="bi bi-download me-1"></i>{{ 'Télécharger PNG' if lang == 'fr' else 'Download PNG' }}
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="printCard()">
+          <i class="bi bi-printer me-1"></i>{{ 'Imprimer' if lang == 'fr' else 'Print' }}
+        </button>
+        <div class="text-muted" style="font-size:0.75rem;max-width:160px;margin-top:4px;">1050×600 px · 300 dpi</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑤ Table Tent -->
+  <div class="citify-card p-4 mb-4">
+    <h2 class="h5 mb-1"><i class="bi bi-easel me-2"></i>{{ 'Chevalet de comptoir' if lang == 'fr' else 'Counter Card / Table Tent' }}</h2>
+    <p class="text-muted small mb-3">
+      {{ 'Imprimez, pliez et posez sur votre comptoir. Format A5 (148×210 mm).' if lang == 'fr'
+         else 'Print, fold, and place on your counter. A5 format (148×210 mm).' }}
+    </p>
+    <div class="d-flex gap-2 mb-3">
+      <button class="btn btn-sm" id="tent-lang-fr" onclick="selectTentLang('fr')"
+              style="background:var(--accent);color:#fff;border:none;">FR</button>
+      <button class="btn btn-outline-secondary btn-sm" id="tent-lang-en" onclick="selectTentLang('en')">EN</button>
+    </div>
+    <div class="d-flex flex-wrap align-items-start gap-4">
+      <canvas id="tent-canvas" style="border-radius:8px;max-width:100%;border:1px solid #333;"></canvas>
+      <div class="d-flex flex-column gap-2 mt-2">
+        <button class="btn btn-accent btn-sm" onclick="downloadTent()">
+          <i class="bi bi-download me-1"></i>{{ 'Télécharger PNG' if lang == 'fr' else 'Download PNG' }}
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="printTent()">
+          <i class="bi bi-printer me-1"></i>{{ 'Imprimer' if lang == 'fr' else 'Print' }}
+        </button>
+        <div class="text-muted" style="font-size:0.75rem;max-width:160px;margin-top:4px;">A5 · {{ 'plier en deux' if lang == 'fr' else 'fold in half' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑥ Window Sticker -->
+  <div class="citify-card p-4 mb-4">
+    <h2 class="h5 mb-1"><i class="bi bi-window me-2"></i>{{ 'Affiche vitrine' if lang == 'fr' else 'Window Sticker' }}</h2>
+    <p class="text-muted small mb-3">
+      {{ 'Imprimez et affichez dans votre fenêtre.' if lang == 'fr'
+         else 'Print and display in your window.' }}
+    </p>
+    <div class="d-flex gap-2 mb-3">
+      <button class="btn btn-sm" id="sticker-lang-fr" onclick="selectStickerLang('fr')"
+              style="background:var(--accent);color:#fff;border:none;">FR</button>
+      <button class="btn btn-outline-secondary btn-sm" id="sticker-lang-en" onclick="selectStickerLang('en')">EN</button>
+    </div>
+    <div class="d-flex flex-wrap align-items-start gap-4">
+      <canvas id="sticker-canvas" style="border-radius:8px;max-width:100%;border:1px solid #333;"></canvas>
+      <div class="d-flex flex-column gap-2 mt-2">
+        <button class="btn btn-accent btn-sm" onclick="downloadSticker()">
+          <i class="bi bi-download me-1"></i>{{ 'Télécharger PNG' if lang == 'fr' else 'Download PNG' }}
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="printSticker()">
+          <i class="bi bi-printer me-1"></i>{{ 'Imprimer' if lang == 'fr' else 'Print' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Hidden full-res canvases -->
+<canvas id="card-canvas-full"    style="display:none;"></canvas>
+<canvas id="tent-canvas-full"    style="display:none;"></canvas>
+<canvas id="sticker-canvas-full" style="display:none;"></canvas>
+<canvas id="sig-canvas-full"     style="display:none;"></canvas>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const PROFILE_URL = {{ profile_url | tojson }};
+const BIZ_NAME    = {{ merchant.business_name | tojson }};
+const RED         = '#e94560';
+const DARK        = '#1a1a2e';
+const WHITE       = '#ffffff';
+
+const CAPTION = {
+  fr: 'Les commerçants montréalais et leurs produits, au même endroit.',
+  en: "Montreal merchants and their products, all in one place."
+};
+const TAGLINE = {
+  fr: "Les commerçants montréalais et leurs produits, au même endroit.",
+  en: "Montreal merchants and their products, all in one place."
+};
+const FIND_US = {
+  fr: 'TROUVEZ-NOUS SUR',
+  en: 'FIND US ON'
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let bannerFormat = 'square';
+let bannerLang   = 'fr';
+let sigLang      = 'fr';
+let cardLang     = 'fr';
+let tentLang     = 'fr';
+let stickerLang  = 'fr';
+
+// ── QR Code ───────────────────────────────────────────────────────────────────
+new QRCode(document.getElementById('qr-container'), {
+  text: PROFILE_URL, width: 280, height: 280,
+  colorDark: DARK, colorLight: WHITE,
+  correctLevel: QRCode.CorrectLevel.H
+});
+function downloadQR() {
+  const img = document.querySelector('#qr-container img');
+  if (!img) return;
+  const a = document.createElement('a');
+  a.download = 'citify-qr-' + slug() + '.png';
+  a.href = img.src; a.click();
+}
+function printQR() {
+  const img = document.querySelector('#qr-container img');
+  if (!img) return;
+  const w = window.open('');
+  w.document.write(`<html><body style="text-align:center;padding:40px;font-family:sans-serif;">
+    <h2>${BIZ_NAME}</h2>
+    <img src="${img.src}" style="width:280px;height:280px;">
+    <p style="margin-top:16px;font-size:14px;">${PROFILE_URL}</p>
+  </body></html>`);
+  w.document.close(); w.print();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function slug() { return BIZ_NAME.toLowerCase().replace(/\s+/g,'-'); }
+
+function setActive(ids, activeId, activeStyle) {
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (id === activeId) {
+      el.style.background = RED; el.style.color = WHITE; el.style.border = 'none';
+      el.className = 'btn btn-sm';
+    } else {
+      el.style.background = ''; el.style.color = ''; el.style.border = '';
+      el.className = 'btn btn-outline-secondary btn-sm';
+    }
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath();
+}
+
+// Fit text to max width
+function fitText(ctx, text, maxW, baseSize, fontStr) {
+  let size = baseSize;
+  while (size > 8) {
+    ctx.font = fontStr(size);
+    if (ctx.measureText(text).width <= maxW) break;
+    size -= 2;
+  }
+  return size;
+}
+
+// ── Social Banners ────────────────────────────────────────────────────────────
+const FORMATS = {
+  square: { w:1080, h:1080, label:'1080×1080 px' },
+  story:  { w:1080, h:1920, label:'1080×1920 px' },
+  cover:  { w:1640, h:624,  label:'1640×624 px'  },
+  wa:     { w:800,  h:800,  label:'800×800 px'   }
+};
+
+function selectFormat(f) {
+  bannerFormat = f;
+  setActive(['tab-square','tab-story','tab-cover','tab-wa'], 'tab-'+f, RED);
+  document.getElementById('banner-size-label').textContent = FORMATS[f].label;
+  drawBanner();
+}
+function selectLang(l) {
+  bannerLang = l;
+  setActive(['lang-fr','lang-en'], 'lang-'+l, RED);
+  drawBanner();
+}
+
+function drawBanner() {
+  const { w, h } = FORMATS[bannerFormat];
+  const canvas = document.getElementById('banner-canvas');
+  const scale  = Math.min(480/w, 380/h);
+  canvas.width  = w; canvas.height = h;
+  canvas.style.width  = Math.round(w*scale)+'px';
+  canvas.style.height = Math.round(h*scale)+'px';
+  renderBanner(canvas.getContext('2d'), w, h, bannerLang, bannerFormat);
+}
+
+function renderBanner(ctx, w, h, lang, format) {
+  const cx = w / 2;
+  const isCover = format === 'cover';
+  const isStory = h > w * 1.2;
+
+  // BG
+  ctx.fillStyle = DARK;
+  ctx.fillRect(0, 0, w, h);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  const gs = Math.round(w / 10);
+  for (let x = 0; x < w; x += gs) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+  for (let y = 0; y < h; y += gs) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+
+  // Glow
+  const grd = ctx.createRadialGradient(w*0.85, h*0.15, 0, w*0.85, h*0.15, w*0.35);
+  grd.addColorStop(0, 'rgba(233,69,96,0.22)');
+  grd.addColorStop(1, 'rgba(233,69,96,0)');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, w, h);
+
+  // Top red bar
+  ctx.fillStyle = RED;
+  ctx.fillRect(0, 0, w, Math.max(5, Math.round(h * 0.01)));
+
+  if (isCover) {
+    // ── FACEBOOK COVER: horizontal two-column layout ──────────────────────
+    const leftCX  = w * 0.32;
+    const rightCX = w * 0.72;
+    const divX    = w * 0.52;
+
+    // Vertical divider
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    ctx.fillRect(divX, h*0.12, 1, h*0.76);
+
+    // Left col — CITIFY + "TROUVEZ-NOUS SUR"
+    const labelSz = Math.round(h * 0.085);
+    ctx.font = `600 ${labelSz}px Inter, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.textAlign = 'center';
+    ctx.fillText(FIND_US[lang], leftCX, h * 0.32);
+
+    const brandSz = Math.round(h * 0.30);
+    ctx.font = `800 ${brandSz}px Poppins, sans-serif`;
+    ctx.fillStyle = WHITE;
+    ctx.fillText('CITIFY', leftCX, h * 0.62);
+
+    const bw = ctx.measureText('CITIFY').width;
+    ctx.fillStyle = RED;
+    ctx.fillRect(leftCX - bw/2, h*0.65, bw, Math.max(3, Math.round(h*0.018)));
+
+    // citify.ca small label
+    ctx.font = `500 ${Math.round(h*0.075)}px Inter, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillText('citify.ca', leftCX, h * 0.86);
+
+    // Right col — BIZ NAME + caption + pill
+    // Keep everything in top 45% / middle 30% / bottom 25%
+    const nameSz = fitText(ctx, BIZ_NAME, w*0.38, Math.round(h*0.20), s=>`700 ${s}px Poppins, sans-serif`);
+    ctx.font = `700 ${nameSz}px Poppins, sans-serif`;
+    ctx.fillStyle = WHITE;
+    ctx.textAlign = 'center';
+    ctx.fillText(BIZ_NAME, rightCX, h * 0.35);
+
+    const capSz = Math.round(h * 0.072);
+    ctx.font = `400 ${capSz}px Inter, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    wrapText(ctx, CAPTION[lang], rightCX, h * 0.57, w * 0.38, capSz * 1.4);
+
+    // Pill — always below caption, fixed at 82%
+    const pillW = Math.round(w * 0.13);
+    const pillH = Math.round(h * 0.18);
+    const pillX = rightCX - pillW/2;
+    const pillY = h * 0.76;
+    roundRect(ctx, pillX, pillY, pillW, pillH, pillH/2);
+    ctx.fillStyle = RED; ctx.fill();
+    ctx.font = `700 ${Math.round(h*0.088)}px Inter, sans-serif`;
+    ctx.fillStyle = WHITE;
+    ctx.fillText('citify.ca', rightCX, pillY + pillH*0.66);
+
+  } else {
+    // ── SQUARE / STORY / WHATSAPP: vertical stacked layout ───────────────
+    const yMid = isStory ? 0.44 : 0.40;
+
+    // "FIND US ON"
+    const labelSz = Math.round(w * 0.028);
+    ctx.font = `600 ${labelSz}px Inter, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.textAlign = 'center';
+    ctx.fillText(FIND_US[lang], cx, h * (yMid - 0.10));
+
+    // CITIFY
+    const brandSz = Math.round(w * 0.13);
+    ctx.font = `800 ${brandSz}px Poppins, sans-serif`;
+    ctx.fillStyle = WHITE;
+    ctx.fillText('CITIFY', cx, h * yMid);
+
+    const bw = ctx.measureText('CITIFY').width;
+    ctx.fillStyle = RED;
+    ctx.fillRect(cx - bw/2, h*yMid + Math.round(h*0.009), bw, Math.max(4, Math.round(h*0.006)));
+
+    // Business name
+    const nameSz = fitText(ctx, BIZ_NAME, w*0.82, Math.round(w*0.058), s=>`700 ${s}px Poppins, sans-serif`);
+    ctx.font = `700 ${nameSz}px Poppins, sans-serif`;
+    ctx.fillStyle = WHITE;
+    ctx.fillText(BIZ_NAME, cx, h * (yMid + 0.13));
+
+    // Caption
+    const capSz = Math.round(w * 0.028);
+    ctx.font = `400 ${capSz}px Inter, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    wrapText(ctx, CAPTION[lang], cx, h * (yMid + 0.23), w * 0.78, capSz * 1.5);
+
+    // citify.ca pill
+    const pillY  = isStory ? h * 0.76 : h * 0.76;
+    const pillW  = Math.round(w * 0.30);
+    const pillH  = Math.round(h * 0.058);
+    roundRect(ctx, cx - pillW/2, pillY - pillH*0.75, pillW, pillH, pillH/2);
+    ctx.fillStyle = RED; ctx.fill();
+    const urlSz = Math.round(w * 0.032);
+    ctx.font = `700 ${urlSz}px Inter, sans-serif`;
+    ctx.fillStyle = WHITE;
+    ctx.fillText('citify.ca', cx, pillY + pillH*0.1);
+
+    // Bottom tagline — only show on story (has room), skip on square/wa to avoid repetition
+    if (isStory) {
+      ctx.font = `400 ${Math.round(w*0.02)}px Inter, sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.fillText('citify.ca · Montreal', cx, h * 0.93);
+    }
+  }
+}
+
+function wrapText(ctx, text, cx, y, maxW, lineH) {
+  const words = text.split(' ');
+  let line = '';
+  let lines = [];
+  for (let w of words) {
+    const test = line ? line + ' ' + w : w;
+    if (ctx.measureText(test).width > maxW && line) {
+      lines.push(line); line = w;
+    } else { line = test; }
+  }
+  lines.push(line);
+  const startY = y - ((lines.length - 1) * lineH) / 2;
+  lines.forEach((l, i) => ctx.fillText(l, cx, startY + i * lineH));
+}
+
+function downloadBanner() {
+  const c = document.getElementById('banner-canvas');
+  const a = document.createElement('a');
+  a.download = `citify-banner-${bannerFormat}-${bannerLang}-${slug()}.png`;
+  a.href = c.toDataURL('image/png'); a.click();
+}
+
+// ── Email Signature Badge ─────────────────────────────────────────────────────
+function selectSigLang(l) {
+  sigLang = l;
+  setActive(['sig-lang-fr','sig-lang-en'], 'sig-lang-'+l, RED);
+  drawSig(document.getElementById('sig-canvas'), 600, 150, l, 1);
+}
+
+function drawSig(canvas, w, h, lang, scale) {
+  canvas.width = w; canvas.height = h;
+  if (scale < 1) {
+    canvas.style.width  = Math.round(w * scale) + 'px';
+    canvas.style.height = Math.round(h * scale) + 'px';
+  }
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = DARK; ctx.fillRect(0, 0, w, h);
+
+  // Left red bar
+  ctx.fillStyle = RED; ctx.fillRect(0, 0, Math.round(w * 0.007), h);
+
+  // Left block occupies 32% of width
+  const divX = Math.round(w * 0.32);
+  const lx   = Math.round(w * 0.03);
+  const lW   = divX - lx - Math.round(w * 0.02);
+
+  // CITIFY — top 55% of height
+  const citSz = fitText(ctx, 'CITIFY', lW, Math.round(h * 0.38), s => `800 ${s}px Poppins, sans-serif`);
+  ctx.font = `800 ${citSz}px Poppins, sans-serif`;
+  ctx.fillStyle = WHITE; ctx.textAlign = 'left';
+  ctx.fillText('CITIFY', lx, Math.round(h * 0.48));
+
+  // citify.ca — bottom 35%, clearly below CITIFY
+  const urlSz = Math.round(h * 0.18);
+  ctx.font = `600 ${urlSz}px Inter, sans-serif`;
+  ctx.fillStyle = RED;
+  ctx.fillText('citify.ca', lx, Math.round(h * 0.82));
+
+  // Divider
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+  ctx.fillRect(divX, Math.round(h * 0.10), 1, Math.round(h * 0.80));
+
+  // Right block
+  const rx = divX + Math.round(w * 0.03);
+  const rW = w - rx - Math.round(w * 0.02);
+
+  // Business name — top 48%
+  const nameSz = fitText(ctx, BIZ_NAME, rW, Math.round(h * 0.34), s => `700 ${s}px Poppins, sans-serif`);
+  ctx.font = `700 ${nameSz}px Poppins, sans-serif`;
+  ctx.fillStyle = WHITE;
+  ctx.fillText(BIZ_NAME, rx, Math.round(h * 0.46));
+
+  // Full tagline — try one line, wrap to two if needed
+  const fullTag = lang === 'fr'
+    ? 'Commerçants montréalais et leurs produits, au même endroit.'
+    : 'Montreal merchants and their products, all in one place.';
+  const tagSzOne = fitText(ctx, fullTag, rW, Math.round(h * 0.16), s => `400 ${s}px Inter, sans-serif`);
+  ctx.font = `400 ${tagSzOne}px Inter, sans-serif`;
+  // If fits on one line use it, else split into two
+  if (ctx.measureText(fullTag).width <= rW) {
+    ctx.fillStyle = 'rgba(255,255,255,0.38)';
+    ctx.fillText(fullTag, rx, Math.round(h * 0.78));
+  } else {
+    // Split at middle word boundary
+    const words = fullTag.split(' ');
+    const mid   = Math.ceil(words.length / 2);
+    const line1 = words.slice(0, mid).join(' ');
+    const line2 = words.slice(mid).join(' ');
+    const twoSz = fitText(ctx, line1, rW, Math.round(h * 0.15), s => `400 ${s}px Inter, sans-serif`);
+    ctx.font = `400 ${twoSz}px Inter, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.38)';
+    ctx.fillText(line1, rx, Math.round(h * 0.70));
+    ctx.fillText(line2, rx, Math.round(h * 0.70) + Math.round(twoSz * 1.4));
+  }
+}
+
+function downloadSig() {
+  const full = document.getElementById('sig-canvas-full');
+  drawSig(full, 1200, 300, sigLang, 1);
+  const a = document.createElement('a');
+  a.download = `citify-signature-${sigLang}-${slug()}.png`;
+  a.href = full.toDataURL('image/png'); a.click();
+}
+
+// ── Business Card Insert ──────────────────────────────────────────────────────
+function selectCardLang(l) {
+  cardLang = l;
+  setActive(['card-lang-fr','card-lang-en'], 'card-lang-'+l, RED);
+  drawCard(document.getElementById('card-canvas'), 525, 300, l);
+}
+
+function drawCard(canvas, w, h, lang) {
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = DARK; ctx.fillRect(0, 0, w, h);
+
+  // Right white panel
+  const panelX = Math.round(w * 0.56);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(panelX, 0, w - panelX, h);
+
+  // Left red accent bar
+  ctx.fillStyle = RED; ctx.fillRect(0, 0, Math.round(w * 0.012), h);
+
+  // Left panel bounds
+  const lx  = Math.round(w * 0.055);
+  const lMax = panelX - Math.round(w * 0.05); // right edge of left panel
+  const lW  = lMax - lx;
+
+  // CITIFY — sized to fit left panel
+  const citSz = fitText(ctx, 'CITIFY', lW, Math.round(h * 0.30), s => `800 ${s}px Poppins, sans-serif`);
+  ctx.font = `800 ${citSz}px Poppins, sans-serif`;
+  ctx.fillStyle = WHITE; ctx.textAlign = 'left';
+  ctx.fillText('CITIFY', lx, Math.round(h * 0.35));
+
+  // Red underline
+  const citW = ctx.measureText('CITIFY').width;
+  ctx.fillStyle = RED;
+  ctx.fillRect(lx, Math.round(h * 0.375), Math.min(citW, lW), Math.max(2, Math.round(h * 0.012)));
+
+  // Business name
+  const nameSz = fitText(ctx, BIZ_NAME, lW, Math.round(h * 0.16), s => `700 ${s}px Poppins, sans-serif`);
+  ctx.font = `700 ${nameSz}px Poppins, sans-serif`;
+  ctx.fillStyle = WHITE;
+  ctx.fillText(BIZ_NAME, lx, Math.round(h * 0.58));
+
+  // Two-line tagline — each line clipped to lW
+  // Tagline — two fixed lines, sized to fit strictly within lW
+  const tagLines = lang === 'fr'
+    ? ['Commerçants montréalais', 'et leurs produits,', 'au même endroit.']
+    : ['Montreal merchants and', 'their products, all in one place.'];
+  const longestTag = tagLines.reduce((a,b) => a.length > b.length ? a : b);
+  const tagSz = fitText(ctx, longestTag, lW, Math.round(h * 0.082), s => `400 ${s}px Inter, sans-serif`);
+  ctx.font = `400 ${tagSz}px Inter, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.38)';
+  // Start higher to fit 3 lines
+  const tagStartY = lang === 'fr' ? Math.round(h * 0.67) : Math.round(h * 0.72);
+  tagLines.forEach((l, i) => ctx.fillText(l, lx, tagStartY + i * Math.round(tagSz * 1.4)));
+
+  // Right panel — QR centred with padding
+  const panelW = w - panelX;
+  const qrSize = Math.round(Math.min(panelW * 0.80, h * 0.62));
+  const qrX = panelX + (panelW - qrSize) / 2;
+  const qrY = Math.round(h * 0.08);
+  const qrImg = document.querySelector('#qr-container img');
+  if (qrImg) ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+
+  // citify.ca below QR
+  const urlSz = Math.round(h * 0.10);
+  ctx.font = `600 ${urlSz}px Inter, sans-serif`;
+  ctx.fillStyle = RED; ctx.textAlign = 'center';
+  ctx.fillText('citify.ca', panelX + panelW / 2, qrY + qrSize + Math.round(h * 0.12));
+}
+
+function downloadCard() {
+  const full = document.getElementById('card-canvas-full');
+  drawCard(full, 1050, 600, cardLang);
+  const a = document.createElement('a');
+  a.download = `citify-card-${cardLang}-${slug()}.png`;
+  a.href = full.toDataURL('image/png'); a.click();
+}
+function printCard() {
+  const full = document.getElementById('card-canvas-full');
+  drawCard(full, 1050, 600, cardLang);
+  const w2 = window.open('');
+  w2.document.write(`<html><body style="margin:0;text-align:center;padding:20px;">
+    <img src="${full.toDataURL('image/png')}" style="max-width:100%;">
+  </body></html>`);
+  w2.document.close(); w2.print();
+}
+
+// ── Table Tent ────────────────────────────────────────────────────────────────
+function selectTentLang(l) {
+  tentLang = l;
+  setActive(['tent-lang-fr','tent-lang-en'], 'tent-lang-'+l, RED);
+  drawTent(document.getElementById('tent-canvas'), 380, 540, l);
+}
+
+function drawTent(canvas, w, h, lang) {
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  const half = h / 2;
+
+  // ── TOP HALF: red back panel — rotated so text reads correctly when folded ──
+  ctx.save();
+  ctx.translate(w / 2, half / 2);   // centre of top half
+  ctx.rotate(Math.PI);
+  ctx.fillStyle = RED;
+  ctx.fillRect(-w / 2, -half / 2, w, half);
+  // CITIFY
+  ctx.font = `800 ${Math.round(w * 0.15)}px Poppins, sans-serif`;
+  ctx.fillStyle = WHITE; ctx.textAlign = 'center';
+  ctx.fillText('CITIFY', 0, -half * 0.08);
+  // citify.ca
+  ctx.font = `500 ${Math.round(w * 0.063)}px Inter, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.82)';
+  ctx.fillText('citify.ca', 0, half * 0.17);
+  ctx.restore();
+
+  // Fold line
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.setLineDash([10, 7]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, half); ctx.lineTo(w, half); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // ── BOTTOM HALF: dark front panel ───────────────────────────────────────────
+  ctx.fillStyle = DARK; ctx.fillRect(0, half, w, half);
+  ctx.fillStyle = RED;  ctx.fillRect(0, half, w, Math.round(h * 0.005));
+
+  ctx.textAlign = 'center';
+
+  // TROUVEZ-NOUS SUR
+  ctx.font = `400 ${Math.round(w * 0.058)}px Inter, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillText(FIND_US[lang], w / 2, half + half * 0.12);
+
+  // CITIFY
+  const citSz = Math.round(w * 0.165);
+  ctx.font = `800 ${citSz}px Poppins, sans-serif`;
+  ctx.fillStyle = WHITE;
+  ctx.fillText('CITIFY', w / 2, half + half * 0.31);
+  const bw = ctx.measureText('CITIFY').width;
+  ctx.fillStyle = RED;
+  ctx.fillRect(w / 2 - bw / 2, half + half * 0.335, bw, 3);
+
+  // Business name
+  const ns = fitText(ctx, BIZ_NAME, w * 0.84, Math.round(w * 0.078), s => `700 ${s}px Poppins, sans-serif`);
+  ctx.font = `700 ${ns}px Poppins, sans-serif`;
+  ctx.fillStyle = WHITE;
+  ctx.fillText(BIZ_NAME, w / 2, half + half * 0.50);
+
+  // QR code — raised so citify.ca fits below without clipping
+  const qrImg = document.querySelector('#qr-container img');
+  const qs    = Math.round(w * 0.28);
+  const qrX   = w / 2 - qs / 2;
+  const qrY   = half + half * 0.55;   // raised from 0.60
+  if (qrImg) {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(qrX - 6, qrY - 6, qs + 12, qs + 12);
+    ctx.drawImage(qrImg, qrX, qrY, qs, qs);
+  }
+
+  // citify.ca — fixed gap below QR
+  ctx.font = `600 ${Math.round(w * 0.052)}px Inter, sans-serif`;
+  ctx.fillStyle = RED;
+  ctx.fillText('citify.ca', w / 2, qrY + qs + Math.round(w * 0.068));
+}
+
+function downloadTent() {
+  const full = document.getElementById('tent-canvas-full');
+  drawTent(full, 1240, 1754, tentLang);
+  const a = document.createElement('a');
+  a.download = `citify-tabletent-${tentLang}-${slug()}.png`;
+  a.href = full.toDataURL('image/png'); a.click();
+}
+function printTent() {
+  const full = document.getElementById('tent-canvas-full');
+  drawTent(full, 1240, 1754, tentLang);
+  const w2 = window.open('');
+  w2.document.write(`<html><body style="margin:0;text-align:center;">
+    <img src="${full.toDataURL('image/png')}" style="max-width:100%;">
+    <p style="font-family:sans-serif;font-size:12px;color:#999;margin-top:8px;">
+      ${tentLang === 'fr' ? 'Plier en deux selon la ligne pointillée.' : 'Fold in half along the dotted line.'}
+    </p>
+  </body></html>`);
+  w2.document.close(); w2.print();
+}
+
+// ── Window Sticker ────────────────────────────────────────────────────────────
+function selectStickerLang(l) {
+  stickerLang = l;
+  setActive(['sticker-lang-fr','sticker-lang-en'], 'sticker-lang-'+l, RED);
+  drawSticker(document.getElementById('sticker-canvas'), 600, 400, l);
+}
+
+function drawSticker(canvas, w, h, lang) {
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = WHITE; ctx.fillRect(0, 0, w, h);
+  const b = Math.round(w*0.018);
+  ctx.strokeStyle = RED; ctx.lineWidth = b*2;
+  ctx.strokeRect(b, b, w-b*2, h-b*2);
+  const cx3 = w/2;
+  ctx.font = `600 ${Math.round(w*0.038)}px Inter, sans-serif`;
+  ctx.fillStyle = '#888'; ctx.textAlign = 'center';
+  ctx.fillText(FIND_US[lang], cx3, h*0.2);
+  ctx.font = `800 ${Math.round(w*0.16)}px Poppins, sans-serif`;
+  ctx.fillStyle = DARK;
+  ctx.fillText('CITIFY', cx3, h*0.42);
+  const cw3 = ctx.measureText('CITIFY').width;
+  ctx.fillStyle = RED; ctx.fillRect(cx3-cw3/2, h*0.445, cw3, Math.round(h*0.008));
+  const ns3 = fitText(ctx, BIZ_NAME, w*0.82, Math.round(w*0.068), s=>`700 ${s}px Poppins, sans-serif`);
+  ctx.font = `700 ${ns3}px Poppins, sans-serif`;
+  ctx.fillStyle = DARK;
+  ctx.fillText(BIZ_NAME, cx3, h*0.6);
+  ctx.font = `600 ${Math.round(w*0.042)}px Inter, sans-serif`;
+  ctx.fillStyle = RED;
+  ctx.fillText('citify.ca', cx3, h*0.74);
+  ctx.font = `400 ${Math.round(w*0.028)}px Inter, sans-serif`;
+  ctx.fillStyle = '#aaa';
+  ctx.fillText(TAGLINE[lang], cx3, h*0.88);
+}
+
+function downloadSticker() {
+  const full = document.getElementById('sticker-canvas-full');
+  drawSticker(full, 1800, 1200, stickerLang);
+  const a = document.createElement('a');
+  a.download = `citify-sticker-${stickerLang}-${slug()}.png`;
+  a.href = full.toDataURL('image/png'); a.click();
+}
+function printSticker() {
+  const full = document.getElementById('sticker-canvas-full');
+  drawSticker(full, 1800, 1200, stickerLang);
+  const w2 = window.open('');
+  w2.document.write(`<html><body style="margin:0;text-align:center;">
+    <img src="${full.toDataURL('image/png')}" style="max-width:100%;">
+  </body></html>`);
+  w2.document.close(); w2.print();
+}
+
+// ── Copy URL ──────────────────────────────────────────────────────────────────
+function copyUrl() {
+  navigator.clipboard.writeText(PROFILE_URL).then(() => {
+    const el = document.getElementById('copy-confirm');
+    el.classList.remove('d-none');
+    setTimeout(() => el.classList.add('d-none'), 2000);
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    drawBanner();
+    drawSig(document.getElementById('sig-canvas'), 600, 150, 'fr', 1);
+    drawCard(document.getElementById('card-canvas'), 525, 300, 'fr');
+    drawTent(document.getElementById('tent-canvas'), 380, 540, 'fr');
+    drawSticker(document.getElementById('sticker-canvas'), 600, 400, 'fr');
+  }, 300); // wait for QR image to render
+});
+</script>
+{% endblock %}

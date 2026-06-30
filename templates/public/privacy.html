@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Politique de confidentialité' if lang == 'fr' else 'Privacy Policy' }} — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+      <h1 class="h2 mb-2">{{ 'Politique de confidentialité' if lang == 'fr' else 'Privacy Policy' }}</h1>
+      <p class="text-muted small mb-4">{{ 'Conforme à la Loi 25 du Québec · Dernière mise à jour : mai 2026' if lang == 'fr' else 'Compliant with Quebec Law 25 · Last updated: May 2026' }}</p>
+      <div class="citify-form-card">
+
+        <h2 class="h5 text-accent">{{ 'Responsable de la protection des renseignements personnels' if lang == 'fr' else 'Privacy Officer' }}</h2>
+        <p class="text-muted">Lyon Hershley — <a href="https://leshley.ca" class="text-accent">leshley.ca</a></p>
+
+        <h2 class="h5 text-accent mt-4">{{ 'Données collectées' if lang == 'fr' else 'Data Collected' }}</h2>
+        <p class="text-muted">{{ 'Nous collectons uniquement : nom du commerce, adresse, NEQ (optionnel), courriel, liens sociaux et fiches produits. Nous collectons le minimum nécessaire au fonctionnement de la plateforme.' if lang == 'fr' else 'We collect only: business name, address, NEQ (optional), email, social links, and product listings. We collect the minimum necessary for platform function.' }}</p>
+
+        <h2 class="h5 text-accent mt-4">{{ 'Utilisation des données' if lang == 'fr' else 'Use of Data' }}</h2>
+        <p class="text-muted">{{ 'Vos données sont utilisées uniquement pour afficher votre profil sur Citify. Elles ne sont jamais vendues à des tiers.' if lang == 'fr' else 'Your data is used only to display your profile on Citify. It is never sold to third parties.' }}</p>
+
+        <h2 class="h5 text-accent mt-4">{{ 'Vos droits' if lang == 'fr' else 'Your Rights' }}</h2>
+        <p class="text-muted">{{ 'Vous pouvez demander la suppression de vos données à tout moment en contactant Lyon Hershley via leshley.ca.' if lang == 'fr' else 'You may request deletion of your data at any time by contacting Lyon Hershley via leshley.ca.' }}</p>
+
+        <h2 class="h5 text-accent mt-4">{{ 'Violations de données' if lang == 'fr' else 'Data Breaches' }}</h2>
+        <p class="text-muted">{{ 'En cas de violation, vous serez notifié dans les 72 heures, conformément à la Loi 25 du Québec.' if lang == 'fr' else 'In the event of a breach, you will be notified within 72 hours, as required by Quebec Law 25.' }}</p>
+
+        <h2 class="h5 text-accent mt-4">Cookies</h2>
+        <p class="text-muted">{{ 'Citify utilise uniquement des cookies de session essentiels. Aucun cookie de suivi ou publicitaire.' if lang == 'fr' else 'Citify uses only essential session cookies. No tracking or advertising cookies.' }}</p>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

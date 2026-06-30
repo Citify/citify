@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /product/add
+Disallow: /product/*/edit
+Disallow: /import/
+Disallow: /admin/
+Disallow: /flag/
+Disallow: /api/
+
+Sitemap: https://citify.ca/sitemap.xml

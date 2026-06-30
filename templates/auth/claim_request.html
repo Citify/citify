@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Revendiquer cette fiche' if lang == 'fr' else 'Claim this listing' }} — {{ merchant.business_name }} — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5" style="max-width:500px;">
+  <div class="citify-card p-4">
+    <h1 class="h4 mb-1">
+      <i class="bi bi-person-check-fill text-accent me-2"></i>
+      {{ 'Revendiquer cette fiche' if lang == 'fr' else 'Claim this listing' }}
+    </h1>
+    <p class="text-muted small mb-4">{{ merchant.business_name }}</p>
+
+    <p class="text-muted mb-4">
+      {{ "Entrez l'adresse courriel de votre commerce. Nous vous enverrons un lien de vérification." if lang == 'fr'
+         else "Enter your business email address. We'll send you a verification link to confirm ownership." }}
+    </p>
+
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-3">
+        <label class="form-label">{{ 'Courriel professionnel' if lang == 'fr' else 'Business email' }}</label>
+        <input type="email" class="form-control" name="email" required autofocus
+               placeholder="you@yourbusiness.com">
+      </div>
+      <button type="submit" class="btn btn-accent w-100">
+        <i class="bi bi-send me-1"></i>{{ 'Envoyer le lien de vérification' if lang == 'fr' else 'Send verification link' }}
+      </button>
+    </form>
+
+    <div class="mt-3 text-center">
+      <a href="{{ url_for('public.merchant_profile', slug=merchant.slug) }}" class="text-muted small">
+        ← {{ 'Retour à la fiche' if lang == 'fr' else 'Back to listing' }}
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

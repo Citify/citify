@@ -1,0 +1,35 @@
+{% macro affiliate_url(product, merchant) %}
+{%- if product.affiliate_url -%}
+  {{ product.affiliate_url }}
+{%- elif product.product_url and merchant.affiliate_suffix -%}
+  {{ product.product_url }}{{ merchant.affiliate_suffix }}
+{%- elif product.product_url -%}
+  {{ product.product_url }}
+{%- elif merchant.affiliate_url -%}
+  {{ merchant.affiliate_url }}
+{%- endif -%}
+{% endmacro %}
+
+{% macro buy_button(product, merchant) %}
+{%- set url = affiliate_url(product, merchant) | trim -%}
+{%- if url %}
+<a href="{{ url }}"
+   target="_blank"
+   rel="nofollow noopener sponsored"
+   class="btn btn-warning btn-sm w-100 mt-2 fw-semibold">
+  <i class="bi bi-bag-check"></i> Buy / Acheter &rarr;
+</a>
+{%- endif %}
+{% endmacro %}
+
+{% macro buy_button_inline(product, merchant) %}
+{%- set url = affiliate_url(product, merchant) | trim -%}
+{%- if url %}
+<a href="{{ url }}"
+   target="_blank"
+   rel="nofollow noopener sponsored"
+   class="btn btn-warning btn-sm">
+  <i class="bi bi-bag-check"></i> Buy
+</a>
+{%- endif %}
+{% endmacro %}

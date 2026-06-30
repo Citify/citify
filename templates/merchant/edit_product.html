@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Modifier le produit' if lang == 'fr' else 'Edit Product' }} — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-7">
+
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="{{ url_for('merchant.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="h4 mb-0">{{ 'Modifier le produit' if lang == 'fr' else 'Edit Product' }}</h1>
+      </div>
+
+      <div class="citify-form-card">
+        <form method="post" action="{{ url_for('merchant.edit_product', product_id=product.id) }}" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Nom (Français)' if lang == 'fr' else 'Name (French)' }}</label>
+              <input class="form-control" type="text" name="name_fr" value="{{ product.name_fr }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Name (English) *</label>
+              <input class="form-control" type="text" name="name_en" value="{{ product.name_en }}" required>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Description (Français)' if lang == 'fr' else 'Description (French)' }}</label>
+              <textarea class="form-control" name="description_fr" rows="3">{{ product.description_fr }}</textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Description (English)</label>
+              <textarea class="form-control" name="description_en" rows="3">{{ product.description_en }}</textarea>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">{{ 'Prix' if lang == 'fr' else 'Price' }}</label>
+            <div class="input-group">
+              <span class="input-group-text" style="background:var(--bg-elevated);border-color:var(--border);color:var(--text-muted);">$</span>
+              <input class="form-control" type="number" name="price" step="0.01" min="0"
+                     value="{{ product.price if product.price else '' }}"
+                     id="priceInput" {{ 'disabled' if product.price_on_request }}>
+            </div>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="price_on_request" id="priceOnRequest"
+                     {{ 'checked' if product.price_on_request }}
+                     onchange="document.getElementById('priceInput').disabled = this.checked">
+              <label class="form-check-label text-muted" for="priceOnRequest">
+                {{ 'Prix sur demande' if lang == 'fr' else 'Price on request' }}
+              </label>
+            </div>
+          </div>
+
+          <!-- Sale -->
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="is_on_sale" id="isOnSale"
+                     {{ 'checked' if product.is_on_sale }}
+                     onchange="document.getElementById('salePriceRow').style.display = this.checked ? 'block' : 'none'">
+              <label class="form-check-label text-danger fw-600" for="isOnSale">
+                🏷️ {{ 'En solde' if lang == 'fr' else 'On sale' }}
+              </label>
+            </div>
+          </div>
+          <div class="mb-3" id="salePriceRow" style="display:{{ 'block' if product.is_on_sale else 'none' }};">
+            <label class="form-label">{{ 'Prix soldé' if lang == 'fr' else 'Sale price' }}</label>
+            <div class="input-group">
+              <span class="input-group-text" style="background:var(--bg-elevated);border-color:var(--border);color:var(--text-muted);">$</span>
+              <input class="form-control" type="number" name="sale_price" step="0.01" min="0"
+                     value="{{ product.sale_price if product.sale_price else '' }}"
+                     placeholder="0.00">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">{{ 'Catégorie' if lang == 'fr' else 'Category' }}</label>
+            <select class="form-select" name="category_id">
+              <option value="">— {{ 'Choisir' if lang == 'fr' else 'Select' }} —</option>
+              {% for cat in categories %}
+                <option value="{{ cat.id }}" {{ 'selected' if product.category_id == cat.id }}>
+                  {{ cat.name_fr if lang == 'fr' else cat.name_en }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Existing images -->
+          {% if product.images %}
+            <div class="mb-3">
+              <label class="form-label">{{ 'Photos actuelles' if lang == 'fr' else 'Current Photos' }}</label>
+              <div class="d-flex flex-wrap gap-2">
+                {% for img in product.images %}
+                  <img src="{{ img.thumbnail_url }}" alt="{{ product.name(lang) }}"
+                       style="width:72px;height:72px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--border);"
+                       loading="lazy">
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+
+          <div class="mb-4">
+            <label class="form-label">{{ 'Ajouter des photos' if lang == 'fr' else 'Add More Photos' }}</label>
+            <input class="form-control" type="file" name="images" accept="image/*" multiple
+                   onchange="previewImages(this, 'image-preview')">
+            <div id="image-preview" class="d-flex flex-wrap gap-2 mt-2"></div>
+          </div>
+
+          <div class="d-flex gap-3">
+            <button type="submit" class="btn btn-accent px-5">
+              <i class="bi bi-check-lg me-1"></i>{{ 'Enregistrer' if lang == 'fr' else 'Save Changes' }}
+            </button>
+            <a href="{{ url_for('merchant.dashboard') }}" class="btn btn-outline-secondary">
+              {{ 'Annuler' if lang == 'fr' else 'Cancel' }}
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

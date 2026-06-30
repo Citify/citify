@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}{% if lang == 'fr' %}Nous contacter — Citify{% else %}Contact Us — Citify{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width:680px;">
+
+  <div class="mb-4">
+    <h1 class="fw-bold" style="font-family:'Poppins',sans-serif;">
+      {% if lang == 'fr' %}Nous contacter{% else %}Contact Us{% endif %}
+    </h1>
+    <p class="text-muted">
+      {% if lang == 'fr' %}
+        Une question, une suggestion ou un problème ? Écrivez-nous.
+      {% else %}
+        A question, suggestion, or issue? We'd love to hear from you.
+      {% endif %}
+    </p>
+  </div>
+
+  {% if success %}
+  <div class="alert alert-success d-flex align-items-center gap-2" role="alert">
+    <i class="bi bi-check-circle-fill fs-5"></i>
+    <div>
+      {% if lang == 'fr' %}
+        Merci ! Votre message a été envoyé. Nous vous répondrons sous peu.
+      {% else %}
+        Thank you! Your message has been sent. We'll get back to you shortly.
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if error %}
+  <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+    <div>
+      {% if lang == 'fr' %}
+        Une erreur est survenue. Veuillez remplir tous les champs ou réessayer.
+      {% else %}
+        Something went wrong. Please fill in all fields and try again.
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not success %}
+  <div class="card border-0 shadow-sm" style="border-radius:14px;overflow:hidden;">
+    <div style="height:4px;background:linear-gradient(90deg,#e94560,#e94560cc);"></div>
+    <div class="card-body p-4 p-md-5">
+      <form method="POST" action="{{ url_for('public.contact') }}" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="contact_name">
+              {% if lang == 'fr' %}Nom{% else %}Name{% endif %}
+            </label>
+            <input type="text" class="form-control" id="contact_name" name="name"
+                   placeholder="{% if lang == 'fr' %}Votre nom{% else %}Your name{% endif %}"
+                   required maxlength="100">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="contact_email">
+              {% if lang == 'fr' %}Courriel{% else %}Email{% endif %}
+            </label>
+            <input type="email" class="form-control" id="contact_email" name="email"
+                   placeholder="you@example.com" required maxlength="150">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="contact_subject">
+            {% if lang == 'fr' %}Sujet{% else %}Subject{% endif %}
+          </label>
+          <input type="text" class="form-control" id="contact_subject" name="subject"
+                 placeholder="{% if lang == 'fr' %}Sujet de votre message{% else %}What's this about?{% endif %}"
+                 required maxlength="200">
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-semibold" for="contact_message">
+            {% if lang == 'fr' %}Message{% else %}Message{% endif %}
+          </label>
+          <textarea class="form-control" id="contact_message" name="message"
+                    rows="6" required maxlength="3000"
+                    placeholder="{% if lang == 'fr' %}Votre message…{% else %}Your message…{% endif %}"></textarea>
+        </div>
+
+        <div class="d-grid">
+          <button type="submit" class="btn btn-accent btn-lg fw-semibold">
+            <i class="bi bi-send me-2"></i>
+            {% if lang == 'fr' %}Envoyer le message{% else %}Send Message{% endif %}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <div class="mt-4 text-center text-muted small">
+    {% if lang == 'fr' %}
+      Vous pouvez aussi nous écrire directement à
+    {% else %}
+      You can also reach us directly at
+    {% endif %}
+    <a href="mailto:contact@citify.ca" style="color:#e94560;">contact@citify.ca</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

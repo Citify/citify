@@ -1,0 +1,580 @@
+{% extends "base.html" %}
+{% from 'macros/affiliate.html' import buy_button %}
+{% block title %}{{ merchant.business_name }}{% if merchant.neighbourhood %} — {{ merchant.neighbourhood }}{% endif %} — Citify Montréal{% endblock %}
+{% block og_title %}{{ merchant.business_name }} — Citify Montréal{% endblock %}
+{% block meta_description %}{% if merchant.description_en %}{{ merchant.description_en | striptags | truncate(155, True, '...') }}{% else %}{{ merchant.business_name }} is a local Montreal business{% if merchant.neighbourhood %} in {{ merchant.neighbourhood }}{% endif %}{% if merchant.category %} specializing in {{ merchant.category.name_en }}{% endif %}. Listed on Citify.{% endif %}{% endblock %}
+{% block og_description %}{% if merchant.description_en %}{{ merchant.description_en | striptags | truncate(155, True, '...') }}{% else %}Discover {{ merchant.business_name }} on Citify — Montreal's local business directory.{% endif %}{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": {{ merchant.business_name | tojson }},
+  "url": {{ request.url | tojson }},
+  {% if merchant.logo_url %}"image": {{ merchant.logo_url | tojson }},{% endif %}
+  {% if merchant.description_en %}"description": {{ merchant.description_en | striptags | tojson }},{% endif %}
+  {% if merchant.address %}"address": {
+    "@type": "PostalAddress",
+    "streetAddress": {{ merchant.address | tojson }},
+    "addressLocality": "Montreal",
+    "addressRegion": "QC",
+    "addressCountry": "CA"
+  },{% endif %}
+  {% if merchant.phone %}"telephone": {{ merchant.phone | tojson }},{% endif %}
+  {% if merchant.website %}"sameAs": {{ merchant.website | tojson }},{% endif %}
+  {% if merchant.latitude and merchant.longitude %}"geo": {
+    "@type": "GeoCoordinates",
+    "latitude": {{ merchant.latitude }},
+    "longitude": {{ merchant.longitude }}
+  },{% endif %}
+  {% if merchant.category %}"category": {{ merchant.category.name_en | tojson }},{% endif %}
+  "currenciesAccepted": "CAD",
+  "areaServed": "Montreal, Quebec, Canada"
+}
+</script>
+{% endblock %}
+
+{% block content %}
+{% if not merchant.is_claimed %}
+<div class="container mt-3">
+  <div class="alert mb-0" style="background:rgba(255,193,7,0.1);border:1px solid rgba(255,193,7,0.3);border-radius:var(--radius);">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div>
+        <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+        <strong>{{ 'Fiche non revendiquée' if lang == 'fr' else 'Unverified listing' }}</strong>
+        <span class="text-muted small ms-2">{{ 'Les informations peuvent ne pas être à jour.' if lang == 'fr' else 'Information may be outdated.' }}</span>
+      </div>
+      <a href="{{ url_for('auth.claim_request', slug=merchant.slug) }}" class="btn btn-warning btn-sm">
+        <i class="bi bi-person-check me-1"></i>{{ 'Revendiquer cette fiche' if lang == 'fr' else 'Claim this listing' }}
+      </a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Merchant Header -->
+<div class="merchant-header">
+  <div class="container">
+    <div class="d-flex flex-wrap align-items-start gap-4">
+      {% if merchant.logo_url %}
+        <img src="{{ merchant.logo_url }}" alt="{{ merchant.business_name }}" class="merchant-header-logo">
+      {% else %}
+        <div class="merchant-header-logo-placeholder"><i class="bi bi-shop"></i></div>
+      {% endif %}
+      <div class="flex-grow-1">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+          <h1 class="h2 mb-0">{{ merchant.business_name }}</h1>
+          {% if merchant.is_verified %}
+            <span class="badge-verified"><i class="bi bi-patch-check-fill"></i> {{ 'Entreprise certifiée' if lang == 'fr' else 'Certified Business' }}</span>
+          {% endif %}
+        </div>
+        {% if merchant.category %}
+          <div class="text-muted small mb-2">
+            <i class="bi bi-tag me-1"></i>
+            {{ merchant.category.name_fr if lang == 'fr' else merchant.category.name_en }}
+            {% if merchant.subcategory %} &mdash; {{ merchant.subcategory.name_fr if lang == 'fr' else merchant.subcategory.name_en }}{% endif %}
+          </div>
+        {% endif %}
+        {% if merchant.neighbourhood or merchant.address %}
+          <div class="text-muted small mb-2">
+            <i class="bi bi-geo-alt me-1"></i>
+            {{ merchant.neighbourhood + ', ' if merchant.neighbourhood else '' }}{{ merchant.address }}
+          </div>
+        {% endif %}
+        {% set open_status = merchant.is_open_now() %}
+        {% if open_status is not none %}
+          <div class="mb-3">
+            {% if open_status %}
+              <span class="badge" style="background:rgba(46,204,113,0.15);color:var(--success);font-size:0.8rem;">
+                <i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>{{ 'Ouvert maintenant' if lang == 'fr' else 'Open now' }}
+              </span>
+            {% else %}
+              <span class="badge" style="background:rgba(231,76,60,0.15);color:#e74c3c;font-size:0.8rem;">
+                <i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>{{ 'Fermé' if lang == 'fr' else 'Closed' }}
+              </span>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        <!-- Social / Contact Links -->
+        <div class="social-links d-flex flex-wrap gap-2">
+          {% if merchant.phone %}
+           <span class="btn btn-sm btn-outline-secondary" title="{{ 'Téléphone' if lang == 'fr' else 'Phone' }}">
+            <i class="bi bi-telephone-fill me-1"></i>{{ merchant.phone }}
+          </span>
+          {% endif %}
+          {% if merchant.whatsapp %}
+           <span class="btn btn-sm btn-outline-secondary" title="WhatsApp">
+             <i class="bi bi-whatsapp me-1"></i>{{ merchant.whatsapp }}
+            </span>
+          {% endif %}
+          {% if merchant.website %}
+            <a href="{{ merchant.website }}"
+               target="_blank" rel="noopener nofollow"
+               title="{{ 'Site web' if lang == 'fr' else 'Website' }}" aria-label="Website">
+              <i class="bi bi-globe"></i>
+            </a>
+          {% endif %}
+          {% if merchant.instagram %}
+            <a href="https://instagram.com/{{ merchant.instagram|replace('@','') }}"
+               target="_blank" rel="noopener nofollow"
+               title="Instagram" aria-label="Instagram">
+              <i class="bi bi-instagram"></i>
+            </a>
+          {% endif %}
+          {% if merchant.facebook %}
+            <a href="{{ merchant.facebook }}"
+               target="_blank" rel="noopener nofollow"
+               title="Facebook" aria-label="Facebook">
+              <i class="bi bi-facebook"></i>
+            </a>
+          {% endif %}
+
+          <!-- Share dropdown -->
+          <div class="dropdown">
+            <button class="social-share-btn"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                    title="{{ 'Partager' if lang == 'fr' else 'Share' }}"
+                    aria-label="{{ 'Partager' if lang == 'fr' else 'Share' }}">
+              <i class="bi bi-share-fill"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end citify-share-menu">
+              <li>
+                <a class="dropdown-item"
+                   href="https://wa.me/?text={{ (merchant.business_name ~ ' — ' ~ request.url)|urlencode }}"
+                   target="_blank" rel="noopener">
+                  <i class="bi bi-whatsapp text-success me-2"></i>WhatsApp
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item"
+                   href="https://www.facebook.com/sharer/sharer.php?u={{ request.url|urlencode }}"
+                   target="_blank" rel="noopener">
+                  <i class="bi bi-facebook me-2" style="color:#1877f2;"></i>Facebook
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item"
+                   href="https://twitter.com/intent/tweet?text={{ (merchant.business_name ~ ' — Citify')|urlencode }}&url={{ request.url|urlencode }}"
+                   target="_blank" rel="noopener">
+                  <i class="bi bi-twitter-x me-2"></i>X / Twitter
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item"
+                   href="mailto:?subject={{ merchant.business_name|urlencode }}&body={{ request.url|urlencode }}">
+                  <i class="bi bi-envelope me-2"></i>{{ 'Courriel' if lang == 'fr' else 'Email' }}
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <button class="dropdown-item"
+                        data-success="{{ 'Lien copié !' if lang == 'fr' else 'Copied!' }}"
+                        data-label="{{ 'Copier le lien' if lang == 'fr' else 'Copy link' }}"
+                        onclick="copyPageLink(this)">
+                  <i class="bi bi-link-45deg me-2"></i>{{ 'Copier le lien' if lang == 'fr' else 'Copy link' }}
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="container mt-4">
+  {% if merchant.active_promo %}
+  <div class="promo-banner mb-4 d-flex align-items-start gap-3" style="background:rgba(233,69,96,0.1);border:1px solid rgba(233,69,96,0.35);border-radius:var(--radius);padding:1rem;">
+    <i class="bi bi-megaphone-fill text-accent fs-4 mt-1"></i>
+    <div class="flex-grow-1">
+      <strong>{{ merchant.promo_title }}</strong>
+      {% if merchant.promo_body %}
+        <p class="mb-0 small text-muted mt-1">{{ merchant.promo_body }}</p>
+      {% endif %}
+    </div>
+    {% if merchant.promo_url %}
+      <a href="{{ merchant.promo_url }}" target="_blank" rel="noopener nofollow"
+         class="btn btn-accent btn-sm text-nowrap">
+        {{ "En savoir plus" if lang == 'fr' else "Learn more" }} &rarr;
+      </a>
+    {% endif %}
+    {% if merchant.promo_expires %}
+      <span class="text-muted small text-nowrap">
+        <i class="bi bi-clock me-1"></i>{{ "Jusqu'au" if lang == 'fr' else "Until" }} {{ merchant.promo_expires.strftime('%b %-d') }}
+      </span>
+    {% endif %}
+  </div>
+  {% endif %}
+  <div class="row g-4">
+
+    <!-- Left: About + Products -->
+    <div class="col-lg-8">
+      {% if merchant.description_en or merchant.description_fr %}
+        <div class="citify-card p-4 mb-4">
+          <h2 class="h5 mb-3">{{ 'À propos' if lang == 'fr' else 'About' }}</h2>
+          <p class="text-muted mb-0">{{ merchant.description_fr if lang == 'fr' and merchant.description_fr else merchant.description_en }}</p>
+        </div>
+      {% endif %}
+
+      <!-- Products -->
+      <div class="section-header">
+        <h2>{{ 'Produits & Services' if lang == 'fr' else 'Products & Services' }}</h2>
+        <span class="text-muted small">{{ products|length }} {{ 'résultats' if lang == 'fr' else 'results' }}</span>
+      </div>
+      {% if product_types %}
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <a href="{{ url_for('public.merchant_profile', slug=merchant.slug, lang=lang, q=search_query) }}"
+             class="btn btn-sm {{ 'btn-accent' if not selected_type else 'btn-outline-secondary' }}">
+            {{ 'Tous' if lang == 'fr' else 'All' }}
+          </a>
+          {% for pt in product_types %}
+            <a href="{{ url_for('public.merchant_profile', slug=merchant.slug, lang=lang, type=pt, q=search_query) }}"
+               class="btn btn-sm {{ 'btn-accent' if selected_type == pt else 'btn-outline-secondary' }}">
+              {{ pt }}
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="get" action="{{ url_for('public.merchant_profile', slug=merchant.slug, lang=lang) }}" class="mb-3">
+        {% if selected_type %}<input type="hidden" name="type" value="{{ selected_type }}">{% endif %}
+        <div class="input-group input-group-sm" style="max-width:320px;">
+          <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+          <input type="text" name="q" class="form-control" value="{{ search_query }}"
+                 placeholder="{{ 'Rechercher des produits...' if lang == 'fr' else 'Search products...' }}">
+          {% if search_query %}
+            <a href="{{ url_for('public.merchant_profile', slug=merchant.slug, lang=lang, type=selected_type) }}"
+               class="btn btn-outline-secondary" title="{{ 'Effacer' if lang == 'fr' else 'Clear' }}">&times;</a>
+          {% endif %}
+        </div>
+      </form>
+
+      {% if products %}
+        <div class="row g-3 product-grid">
+          {% for product in products %}
+          <div class="col-6 col-md-4 d-flex flex-column">
+            <a href="{{ url_for('public.product_detail', slug=merchant.slug, product_id=product.id) }}" class="text-decoration-none flex-grow-1">
+              <div class="product-card h-100">
+                {% if product.thumbnail %}
+                  <img src="{{ product.thumbnail }}" alt="{{ product.name(lang) }}" class="product-card-img" loading="lazy">
+                {% else %}
+                  <div class="product-card-img-placeholder"><i class="bi bi-image"></i></div>
+                {% endif %}
+                <div class="product-card-body">
+                  <div class="product-card-title">{{ product.name(lang) }}</div>
+                  {% if product.is_on_sale and product.sale_price %}
+                    <div class="product-card-price">
+                      <span class="badge me-1" style="background:#e74c3c;color:#fff;font-size:0.7rem;">🏷️ {{ 'Solde' if lang == 'fr' else 'Sale' }}</span>
+                      ${{ "%.2f"|format(product.sale_price) }}
+                      <span class="text-muted small text-decoration-line-through ms-1">${{ "%.2f"|format(product.price) }}</span>
+                    </div>
+                  {% elif product.price_on_request or product.price is none %}
+                    <div class="product-card-price-request">{{ 'Sur demande' if lang == 'fr' else 'Price on request' }}</div>
+                  {% else %}
+                    <div class="product-card-price">${{ "%.2f"|format(product.price) }}</div>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
+            {{ buy_button(product, merchant) }}
+          </div>
+          {% endfor %}
+        </div>
+
+        {% if pagination.pages > 1 %}
+        <nav class="mt-4" aria-label="Products pagination">
+          <ul class="pagination citify-pagination justify-content-center">
+            {% if pagination.has_prev %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ pagination.prev_num }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"><i class="bi bi-chevron-left"></i></a>
+              </li>
+            {% endif %}
+            {% for p in pagination.iter_pages() %}
+              {% if p %}
+                <li class="page-item {{ 'active' if p == pagination.page }}">
+                  <a class="page-link" href="?page={{ p }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">{{ p }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            {% if pagination.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ pagination.next_num }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"><i class="bi bi-chevron-right"></i></a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+
+      {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-box-seam fs-1 d-block mb-3"></i>
+          <p>{{ 'Aucun produit pour l\'instant.' if lang == 'fr' else 'No products listed yet.' }}</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Right: Delivery + Affiliate + Map + Video + Hours + NEQ + Contact + Report -->
+    <div class="col-lg-4">
+
+      {# Delivery badge #}
+      {% if merchant.offers_delivery %}
+        <div class="citify-card p-3 mb-4">
+          <h3 class="h6 mb-3"><i class="bi bi-bicycle text-accent me-2"></i>{{ 'Livraison disponible' if lang == 'fr' else 'Delivery available' }}</h3>
+          {% if merchant.delivery_url %}
+            <a href="{{ merchant.delivery_url }}" target="_blank" rel="nofollow noopener"
+               class="btn btn-sm btn-outline-info w-100 mb-2">
+              <i class="bi bi-bag me-1"></i>{{ 'Commander directement' if lang == 'fr' else 'Order directly' }}
+            </a>
+          {% endif %}
+          {% if merchant.third_party_delivery_url %}
+            <a href="{{ merchant.third_party_delivery_url }}" target="_blank" rel="nofollow noopener"
+               class="btn btn-sm btn-outline-secondary w-100">
+              <i class="bi bi-scooter me-1"></i>{{ 'Plateforme de livraison' if lang == 'fr' else 'Delivery platform' }}
+            </a>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {# Affiliate CTA — unclaimed listings only #}
+      {% if not merchant.is_claimed and merchant.affiliate_url %}
+        <div class="citify-card p-3 mb-4" style="border:1px solid rgba(255,193,7,0.3);">
+          <h3 class="h6 mb-2"><i class="bi bi-stars text-warning me-2"></i>{{ 'Offre partenaire' if lang == 'fr' else 'Partner offer' }}</h3>
+          <a href="{{ merchant.affiliate_url }}" target="_blank" rel="nofollow noopener sponsored"
+             class="btn btn-warning btn-sm w-100">
+            {{ 'Magasiner / Shop' }} &rarr;
+          </a>
+        </div>
+      {% endif %}
+
+      {% set has_locations = merchant.locations and merchant.locations|length > 0 %}
+      {% if has_locations or (merchant.latitude and merchant.longitude) %}
+        <div class="citify-card p-3 mb-4">
+          <h3 class="h6 mb-3"><i class="bi bi-geo-alt-fill text-accent me-2"></i>{{ 'Localisation' if lang == 'fr' else 'Location' }}</h3>
+          <div id="citify-map" class="citify-map"></div>
+          {% if has_locations %}
+            <ul class="list-unstyled mt-2 mb-0">
+              {% for loc in merchant.locations %}
+                <li class="text-muted small mb-1">
+                  <i class="bi bi-geo me-1"></i>
+                  {% if loc.label(lang) %}
+                    <strong>{{ loc.label(lang) }}</strong>{% if loc.address %} — {{ loc.address }}{% endif %}
+                  {% else %}
+                    {{ loc.address }}
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% elif merchant.address %}
+            <p class="text-muted small mt-2 mb-0"><i class="bi bi-geo me-1"></i>{{ merchant.address }}, Montréal</p>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {% if merchant.video_url %}
+        <div class="citify-card p-3 mb-4">
+          <h3 class="h6 mb-3"><i class="bi bi-play-circle-fill text-accent me-2"></i>{{ 'Vidéo' if lang == 'fr' else 'Video' }}</h3>
+          {% set vid = merchant.video_url %}
+          {% if 'youtube.com/watch?v=' in vid %}
+            {% set vid_id = vid.split('v=')[1].split('&')[0] %}
+            <div class="ratio ratio-16x9">
+              <iframe src="https://www.youtube.com/embed/{{ vid_id }}" allowfullscreen loading="lazy"></iframe>
+            </div>
+          {% elif 'youtu.be/' in vid %}
+            {% set vid_id = vid.split('youtu.be/')[1].split('?')[0] %}
+            <div class="ratio ratio-16x9">
+              <iframe src="https://www.youtube.com/embed/{{ vid_id }}" allowfullscreen loading="lazy"></iframe>
+            </div>
+          {% elif 'vimeo.com/' in vid %}
+            {% set vid_id = vid.split('vimeo.com/')[1].split('?')[0] %}
+            <div class="ratio ratio-16x9">
+              <iframe src="https://player.vimeo.com/video/{{ vid_id }}" allowfullscreen loading="lazy"></iframe>
+            </div>
+          {% else %}
+            <a href="{{ vid }}" target="_blank" rel="noopener" class="btn btn-outline-accent btn-sm">
+              <i class="bi bi-play-circle me-1"></i>{{ 'Voir la vidéo' if lang == 'fr' else 'Watch video' }}
+            </a>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {% if merchant.get_hours() %}
+        <div class="citify-card p-3 mb-4">
+          <h3 class="h6 mb-3"><i class="bi bi-clock text-accent me-2"></i>{{ "Heures d'ouverture" if lang == 'fr' else 'Opening Hours' }}</h3>
+          {% set hours = merchant.get_hours() %}
+          {% set days = [
+            ('mon', 'Monday', 'Lundi'),
+            ('tue', 'Tuesday', 'Mardi'),
+            ('wed', 'Wednesday', 'Mercredi'),
+            ('thu', 'Thursday', 'Jeudi'),
+            ('fri', 'Friday', 'Vendredi'),
+            ('sat', 'Saturday', 'Samedi'),
+            ('sun', 'Sunday', 'Dimanche'),
+          ] %}
+          {% for key, en, fr in days %}
+            {% set day = hours.get(key, {}) %}
+            <div class="d-flex justify-content-between small mb-1">
+              <span class="text-muted">{{ fr if lang == 'fr' else en }}</span>
+              {% if day.get('closed') %}
+                <span class="text-danger">{{ 'Fermé' if lang == 'fr' else 'Closed' }}</span>
+              {% else %}
+                <span>{{ day.get('open','?') }} – {{ day.get('close','?') }}</span>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if merchant.neq %}
+        <div class="citify-card p-3 mb-4">
+          <h3 class="h6 mb-2"><i class="bi bi-building-check text-accent me-2"></i>{{ 'Numéro d\'entreprise' if lang == 'fr' else 'Business Number' }}</h3>
+          <p class="text-muted small mb-1">NEQ: <strong class="text-primary">{{ merchant.neq }}</strong></p>
+          <a href="https://www.registreentreprises.gouv.qc.ca/en/consulting/company-info/default.aspx?st=1&RCN={{ merchant.neq }}"
+             target="_blank" rel="noopener" class="small text-accent">
+            {{ 'Vérifier au REQ' if lang == 'fr' else 'Verify at REQ' }} <i class="bi bi-box-arrow-up-right ms-1"></i>
+          </a>
+        </div>
+      {% endif %}
+
+      <!-- Contact form -->
+      <div class="citify-card p-3 mb-4">
+        <h3 class="h6 mb-3"><i class="bi bi-envelope-fill text-accent me-2"></i>{{ 'Contacter ce commerce' if lang == 'fr' else 'Contact this business' }}</h3>
+        <form action="{{ url_for('public.contact_merchant', slug=merchant.slug) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-2">
+            <input type="text" class="form-control form-control-sm" name="sender_name"
+                   placeholder="{{ 'Votre nom' if lang == 'fr' else 'Your name' }}" required maxlength="200">
+          </div>
+          <div class="mb-2">
+            <input type="email" class="form-control form-control-sm" name="sender_email"
+                   placeholder="{{ 'Votre courriel' if lang == 'fr' else 'Your email' }}" required maxlength="200">
+          </div>
+          <div class="mb-2">
+            <textarea class="form-control form-control-sm" name="body" rows="4"
+                      placeholder="{{ 'Votre message...' if lang == 'fr' else 'Your message...' }}"
+                      required maxlength="2000"></textarea>
+          </div>
+          <button type="submit" class="btn btn-accent btn-sm w-100">
+            <i class="bi bi-send me-1"></i>{{ 'Envoyer' if lang == 'fr' else 'Send Message' }}
+          </button>
+        </form>
+      </div>
+
+      <!-- Rating -->
+      <div class="citify-card p-3 mb-4" id="ratings">
+        <h3 class="h6 mb-3"><i class="bi bi-star-fill text-warning me-2"></i>{{ "Évaluer ce commerce" if lang == 'fr' else "Rate this business" }}</h3>
+        {% if merchant.rating_count %}
+          <div class="mb-3">
+            {% for i in range(1, 6) %}
+              <i class="bi bi-star{{ '-fill' if i <= merchant.rating_avg|round|int else '' }}" style="color:#f5a623;font-size:1rem;"></i>
+            {% endfor %}
+            <span class="text-muted small ms-1">{{ merchant.rating_avg }}/5 &mdash; {{ merchant.rating_count }} {{ "évaluation" if lang == 'fr' else "rating" }}{{ "s" if merchant.rating_count > 1 }}</span>
+          </div>
+          {% if ratings %}
+            <div class="mb-3">
+              {% for r in ratings %}
+                {% if r.comment %}
+                  <div class="small p-2 mb-1 rounded" style="background:var(--bg-elevated);">
+                    <span style="color:#f5a623;">
+                      {% for i in range(1,6) %}{{ "★" if i <= r.score else "☆" }}{% endfor %}
+                    </span>
+                    <span class="text-muted ms-1">{{ r.comment }}</span>
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endif %}
+        <form action="{{ url_for('public.rate_merchant', slug=merchant.slug) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="citify-star-picker mb-2">
+            {% for i in [5,4,3,2,1] %}
+              <input type="radio" name="score" id="cstar{{ i }}" value="{{ i }}">
+              <label for="cstar{{ i }}" title="{{ i }} star{{ 's' if i > 1 }}">&#9733;</label>
+            {% endfor %}
+          </div>
+          <textarea class="form-control form-control-sm mb-2" name="comment" rows="2" maxlength="300"
+                    placeholder="{{ 'Commentaire optionnel...' if lang == 'fr' else 'Optional comment...' }}"></textarea>
+          <button type="submit" class="btn btn-accent btn-sm w-100">
+            <i class="bi bi-star me-1"></i>{{ "Soumettre" if lang == 'fr' else "Submit rating" }}
+          </button>
+        </form>
+      </div>
+
+      <!-- Report -->
+      <div class="citify-card p-3">
+        <h3 class="h6 mb-3 text-muted"><i class="bi bi-flag me-2"></i>{{ 'Signaler ce commerce' if lang == 'fr' else 'Report this listing' }}</h3>
+        <form action="{{ url_for('public.flag_merchant', merchant_id=merchant.id) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <select class="form-select form-select-sm mb-2" name="reason">
+            {% if lang == 'fr' %}
+              <option value="spam">Spam ou faux commerce</option>
+              <option value="closed">Commerce fermé</option>
+              <option value="inappropriate">Contenu inapproprié</option>
+              <option value="other">Autre</option>
+            {% else %}
+              <option value="spam">Spam or fake listing</option>
+              <option value="closed">Business is closed</option>
+              <option value="inappropriate">Inappropriate content</option>
+              <option value="other">Other</option>
+            {% endif %}
+          </select>
+          <button type="submit" class="btn btn-outline-secondary btn-sm w-100">
+            {{ 'Envoyer le signalement' if lang == 'fr' else 'Submit Report' }}
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% set has_locations = merchant.locations and merchant.locations|length > 0 %}
+{% if has_locations %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var locs = [
+      {% for loc in merchant.locations %}
+      { lat: {{ loc.latitude or 'null' }}, lon: {{ loc.longitude or 'null' }},
+        label: {{ loc.label(lang)|tojson }}, address: {{ loc.address|tojson }} }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+    initMultiMap(locs);
+  });
+</script>
+{% elif merchant.latitude and merchant.longitude %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    initMap({{ merchant.latitude }}, {{ merchant.longitude }}, {{ merchant.business_name|tojson }});
+  });
+</script>
+{% endif %}
+<script>
+function copyPageLink(btn) {
+  var successMsg = btn.getAttribute('data-success');
+  var defaultMsg = btn.getAttribute('data-label');
+  navigator.clipboard.writeText(window.location.href).then(function() {
+    btn.innerHTML = '<i class="bi bi-check-lg me-2 text-success"></i>' + successMsg;
+    setTimeout(function() {
+      btn.innerHTML = '<i class="bi bi-link-45deg me-2"></i>' + defaultMsg;
+    }, 1500);
+  }).catch(function() {
+    var el = document.createElement('textarea');
+    el.value = window.location.href;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    btn.innerHTML = '<i class="bi bi-check-lg me-2 text-success"></i>' + successMsg;
+    setTimeout(function() {
+      btn.innerHTML = '<i class="bi bi-link-45deg me-2"></i>' + defaultMsg;
+    }, 1500);
+  });
+}
+</script>
+{% endblock %}

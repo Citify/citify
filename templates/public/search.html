@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block title %}{{ ('Recherche' if lang == 'fr' else 'Search') + (' — ' + q if q else '') }} — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row g-4">
+
+    <!-- Sidebar filters -->
+    <div class="col-lg-3">
+      <div class="citify-card p-3 sticky-top" style="top: 80px;">
+        <h2 class="h6 mb-3 text-muted text-uppercase">{{ 'Filtrer' if lang == 'fr' else 'Filter' }}</h2>
+        <form method="get" action="{{ url_for('public.search') }}">
+          <div class="mb-3">
+            <label class="form-label">{{ 'Recherche' if lang == 'fr' else 'Search' }}</label>
+            <input class="form-control form-control-sm" type="search" name="q" value="{{ q }}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">{{ 'Catégorie' if lang == 'fr' else 'Category' }}</label>
+            <select class="form-select form-select-sm" name="category">
+              <option value="">{{ 'Toutes les catégories' if lang == 'fr' else 'All categories' }}</option>
+              {% for cat in categories %}
+                <option value="{{ cat.slug }}" {{ 'selected' if cat_slug == cat.slug }}>
+                  {{ cat.name_fr if lang == 'fr' else cat.name_en }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">{{ 'Prix' if lang == 'fr' else 'Price' }}</label>
+            <div class="d-flex gap-2 align-items-center">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text">$</span>
+                <input class="form-control" type="number" name="price_min" min="0" step="1"
+                       placeholder="{{ 'Min' if lang == 'en' else 'Min' }}"
+                       value="{{ price_min }}">
+              </div>
+              <span class="text-muted">—</span>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text">$</span>
+                <input class="form-control" type="number" name="price_max" min="0" step="1"
+                       placeholder="{{ 'Max' if lang == 'en' else 'Max' }}"
+                       value="{{ price_max }}">
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="on_sale" id="onSale"
+                     {{ 'checked' if request.args.get('on_sale') }}>
+              <label class="form-check-label" for="onSale">
+                🏷️ {{ 'En solde seulement' if lang == 'fr' else 'On sale only' }}
+              </label>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-accent btn-sm w-100">
+            {{ 'Appliquer' if lang == 'fr' else 'Apply' }}
+          </button>
+          {% if q or cat_slug %}
+            <a href="{{ url_for('public.search') }}" class="btn btn-outline-secondary btn-sm w-100 mt-2">
+              {{ 'Réinitialiser' if lang == 'fr' else 'Clear filters' }}
+            </a>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="col-lg-9">
+      <div class="section-header">
+        <h1 class="h4 mb-0">
+          {% if q %}
+            {{ 'Résultats pour' if lang == 'fr' else 'Results for' }} "<span class="text-accent">{{ q }}</span>"
+          {% elif cat_slug %}
+            {% for cat in categories %}{% if cat.slug == cat_slug %}{{ cat.name_fr if lang == 'fr' else cat.name_en }}{% endif %}{% endfor %}
+          {% else %}
+            {{ 'Tous les commerces' if lang == 'fr' else 'All Businesses' }}
+          {% endif %}
+        </h1>
+        <span class="text-muted small">{{ pagination.total }} {{ 'commerces' if lang == 'fr' else 'businesses' }}</span>
+      </div>
+
+      {% if merchants %}
+        <div class="row g-3">
+          {% for m in merchants %}
+          <div class="col-12 col-sm-6 col-xl-4">
+            <a href="{{ url_for('public.merchant_profile', slug=m.slug) }}" class="text-decoration-none">
+              <div class="merchant-card">
+                <div class="d-flex align-items-start gap-3 mb-3">
+                  {% if m.logo_url %}
+                    <img src="{{ m.logo_url }}" alt="{{ m.business_name }}" class="merchant-logo" loading="lazy">
+                  {% else %}
+                    <div class="merchant-logo-placeholder"><i class="bi bi-shop"></i></div>
+                  {% endif %}
+                  <div class="flex-grow-1 min-w-0">
+                    <div class="d-flex align-items-center justify-content-between">
+                      <h2 class="h6 mb-1">{{ m.business_name }}</h2>
+                      <button class="fav-btn"
+                              data-merchant-id="{{ m.id }}"
+                              data-add="{{ 'Ajouter aux favoris' if lang == 'fr' else 'Add to favourites' }}"
+                              data-remove="{{ 'Retirer des favoris' if lang == 'fr' else 'Remove from favourites' }}"
+                              title="{{ 'Ajouter aux favoris' if lang == 'fr' else 'Add to favourites' }}">
+                        <i class="bi bi-heart-fill"></i>
+                      </button>
+                    </div>
+                  {% if m.is_featured %}
+                    <span class="badge mb-1" style="background:gold;color:#000;font-size:0.7rem;">⭐ {{ 'En vedette' if lang == 'fr' else 'Featured' }}</span>
+                  {% endif %}
+                  {% if m.active_promo %}
+                    <span class="badge mb-1" style="background:rgba(233,69,96,0.15);color:#e94560;border:1px solid rgba(233,69,96,0.3);font-size:0.7rem;">
+                      🏷️ {{ 'Promo' }}
+                    </span>
+                  {% endif %}
+                    {% if m.is_verified %}
+                      <span class="badge-verified"><i class="bi bi-patch-check-fill"></i> {{ 'Certifié' if lang == 'fr' else 'Certified' }}</span>
+                    {% endif %}
+                    {% if m.neighbourhood %}
+                      <div class="text-muted small mt-1"><i class="bi bi-geo-alt me-1"></i>{{ m.neighbourhood }}</div>
+                    {% endif %}
+                    {% if m.rating_count %}
+                      <div class="mt-1">
+                        {% for i in range(1, 6) %}
+                          <i class="bi bi-star{{ '-fill' if i <= m.rating_avg|round|int else '' }}" style="color:#f5a623;font-size:0.75rem;"></i>
+                        {% endfor %}
+                        <span class="text-muted small ms-1">{{ m.rating_avg }} ({{ m.rating_count }})</span>
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+                {% if m.description_fr or m.description_en %}
+                  <p class="text-muted small mb-2" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                    {{ m.description_fr if lang == 'fr' and m.description_fr else m.description_en }}
+                  </p>
+                {% endif %}
+                {% if m.category %}
+                  <span class="badge" style="background:var(--bg-elevated);color:var(--text-muted);font-size:0.72rem;">
+                    {{ m.category.name_fr if lang == 'fr' else m.category.name_en }}
+                  </span>
+                {% endif %}
+              </div>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <nav class="mt-4" aria-label="Search pagination">
+          <ul class="pagination citify-pagination justify-content-center">
+            {% if pagination.has_prev %}
+              <li class="page-item"><a class="page-link" href="?q={{ q }}&category={{ cat_slug }}&page={{ pagination.prev_num }}"><i class="bi bi-chevron-left"></i></a></li>
+            {% endif %}
+            {% for p in pagination.iter_pages() %}
+              {% if p %}
+                <li class="page-item {{ 'active' if p == pagination.page }}">
+                  <a class="page-link" href="?q={{ q }}&category={{ cat_slug }}&page={{ p }}">{{ p }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            {% if pagination.has_next %}
+              <li class="page-item"><a class="page-link" href="?q={{ q }}&category={{ cat_slug }}&page={{ pagination.next_num }}"><i class="bi bi-chevron-right"></i></a></li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+
+      {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-search fs-1 d-block mb-3"></i>
+          <p class="fs-5">{{ 'Aucun commerce trouvé.' if lang == 'fr' else 'No businesses found.' }}</p>
+          <a href="{{ url_for('public.search') }}" class="btn btn-outline-accent mt-2">{{ 'Voir tous les commerces' if lang == 'fr' else 'Browse all businesses' }}</a>
+        </div>
+      {% endif %}
+
+      {% if products %}
+      <div class="mt-5">
+        <div class="section-header mb-3">
+          <h2 class="h5 mb-0">{{ 'Produits trouvés' if lang == 'fr' else 'Products Found' }}</h2>
+          <span class="text-muted small">{{ products|length }} {{ 'produits' if lang == 'fr' else 'products' }}</span>
+        </div>
+        <div class="row g-3">
+          {% for p in products %}
+          <div class="col-12 col-sm-6 col-xl-4">
+            <a href="{{ url_for('public.product_detail', slug=p.merchant.slug, product_id=p.id) }}" class="text-decoration-none">
+              <div class="merchant-card h-100">
+                {% if p.thumbnail %}
+                  <img src="{{ p.thumbnail }}" alt="{{ p.name(lang) }}" class="w-100 mb-3 rounded" style="height:160px;object-fit:cover;" loading="lazy">
+                {% else %}
+                  <div class="w-100 mb-3 rounded d-flex align-items-center justify-content-center"
+                       style="height:160px;background:var(--bg-elevated);">
+                    <i class="bi bi-image text-muted fs-1"></i>
+                  </div>
+                {% endif %}
+                <h3 class="h6 mb-1">{{ p.name(lang) }}</h3>
+                <div class="text-muted small mb-2">
+                  <i class="bi bi-shop me-1"></i>{{ p.merchant.business_name }}
+                </div>
+                {% if p.is_on_sale %}
+                  <div>
+                    <span class="badge me-1" style="background:#e74c3c;color:#fff;font-size:0.7rem;">🏷️ {{ 'Solde' if lang == 'fr' else 'Sale' }}</span>
+                    {% if p.sale_price %}
+                      <span class="text-accent fw-600">${{ '%.2f'|format(p.sale_price) }}</span>
+                      {% if p.price %}
+                        <span class="text-muted small text-decoration-line-through ms-1">${{ '%.2f'|format(p.price) }}</span>
+                      {% endif %}
+                    {% elif p.price %}
+                      <span class="text-accent fw-600">${{ '%.2f'|format(p.price) }}</span>
+                    {% endif %}
+                  </div>
+                {% elif p.price_on_request or not p.price %}
+                  <span class="badge bg-secondary">{{ 'Prix sur demande' if lang == 'fr' else 'Price on request' }}</span>
+                {% else %}
+                  <span class="text-accent fw-600">${{ '%.2f'|format(p.price) }}</span>
+                {% endif %}
+              </div>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

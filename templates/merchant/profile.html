@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Modifier le profil' if lang == 'fr' else 'Edit Profile' }} — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="{{ url_for('merchant.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="h4 mb-0">{{ 'Modifier le profil' if lang == 'fr' else 'Edit Profile' }}</h1>
+      </div>
+
+      <form method="post" action="{{ url_for('merchant.edit_profile') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Business info -->
+        <div class="citify-form-card mb-4">
+          <h2 class="h6 text-muted text-uppercase mb-4">{{ 'Informations du commerce' if lang == 'fr' else 'Business Information' }}</h2>
+
+          <div class="mb-3">
+            <label class="form-label">{{ 'Nom du commerce *' if lang == 'fr' else 'Business Name *' }}</label>
+            <input class="form-control" type="text" name="business_name" value="{{ merchant.business_name }}" required>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Description (Français)' if lang == 'fr' else 'Description (French)' }}</label>
+              <textarea class="form-control" name="description_fr" rows="4" placeholder="{{ 'Décrivez votre commerce...' }}">{{ merchant.description_fr }}</textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Description (English)</label>
+              <textarea class="form-control" name="description_en" rows="4" placeholder="Describe your business...">{{ merchant.description_en }}</textarea>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-8">
+              <label class="form-label">{{ 'Adresse' if lang == 'fr' else 'Address' }}</label>
+              <input class="form-control" type="text" name="address" value="{{ merchant.address }}"
+                     placeholder="123 Rue Saint-Denis, Montréal">
+              <div class="mt-1">
+                <a href="{{ url_for('merchant.locations') }}" class="small text-accent">
+                  <i class="bi bi-geo-alt me-1"></i>{{ "Gérer mes succursales" if lang == 'fr' else "Manage multiple locations" }} &rarr;
+                </a>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">{{ 'Quartier' if lang == 'fr' else 'Neighbourhood' }}</label>
+              <select class="form-select" name="neighbourhood">
+                <option value="">{{ 'Choisir un quartier...' if lang == 'fr' else 'Select a neighbourhood...' }}</option>
+                {% for n in neighbourhoods %}
+                  <option value="{{ n.en }}" {{ 'selected' if merchant.neighbourhood == n.en }}>
+                    {{ n.fr if lang == 'fr' else n.en }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Catégorie' if lang == 'fr' else 'Category' }}</label>
+              <select class="form-select" name="category_id" id="categorySelect"
+                      onchange="loadSubcategories(this.value, document.getElementById('subcategorySelect'))">
+                <option value="">— {{ 'Choisir' if lang == 'fr' else 'Select' }} —</option>
+                {% for cat in categories %}
+                  <option value="{{ cat.id }}" {{ 'selected' if merchant.category_id == cat.id }}>
+                    {{ cat.name_fr if lang == 'fr' else cat.name_en }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Sous-catégorie' if lang == 'fr' else 'Subcategory' }}</label>
+              <select class="form-select" name="subcategory_id" id="subcategorySelect">
+                <option value="">— {{ 'Choisir' if lang == 'fr' else 'Select' }} —</option>
+                {% if merchant.subcategory %}
+                  <option value="{{ merchant.subcategory.id }}" selected>
+                    {{ merchant.subcategory.name_fr if lang == 'fr' else merchant.subcategory.name_en }}
+                  </option>
+                {% endif %}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- NEQ -->
+        <div class="citify-form-card mb-4">
+          <h2 class="h6 text-muted text-uppercase mb-4">{{ 'Certification' if lang == 'fr' else 'Certification' }}</h2>
+          <div class="mb-0">
+            <label class="form-label">{{ 'Numéro d\'entreprise du Québec (NEQ)' if lang == 'fr' else 'Quebec Business Number (NEQ)' }}</label>
+            <input class="form-control" type="text" name="neq" value="{{ merchant.neq }}" placeholder="1234567890">
+            <div class="form-text">
+              {% if merchant.is_verified %}
+                <span class="badge-verified"><i class="bi bi-patch-check-fill"></i> {{ 'Badge certifié actif' if lang == 'fr' else 'Certified badge active' }}</span>
+              {% else %}
+                {{ 'Entrez votre NEQ pour obtenir le badge Entreprise certifiée.' if lang == 'fr' else 'Enter your NEQ to get the Certified Business badge.' }}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Social links -->
+        <div class="citify-form-card mb-4">
+          <h2 class="h6 text-muted text-uppercase mb-4">{{ 'Coordonnées & réseaux sociaux' if lang == 'fr' else 'Contact & Social Links' }}</h2>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-telephone me-1"></i>{{ 'Téléphone' if lang == 'fr' else 'Phone' }}</label>
+              <input class="form-control" type="tel" name="phone" value="{{ merchant.phone }}" placeholder="+1 514 555-0000">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-whatsapp me-1"></i>WhatsApp</label>
+              <input class="form-control" type="tel" name="whatsapp" value="{{ merchant.whatsapp }}" placeholder="+1 514 555-0000">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-globe me-1"></i>{{ 'Site web' if lang == 'fr' else 'Website' }}</label>
+              <input class="form-control" type="url" name="website" value="{{ merchant.website }}" placeholder="https://example.com">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-envelope-heart me-1"></i>{{ 'Infolettre (lien d\u2019abonnement)' if lang == 'fr' else 'Newsletter signup URL' }}</label>
+              <input class="form-control" type="url" name="newsletter_url" value="{{ merchant.newsletter_url or '' }}"
+                     placeholder="https://yoursite.com/newsletter">
+              <div class="form-text">{{ 'Lien vers votre formulaire d\u2019abonnement (Mailchimp, Substack, etc.).' if lang == 'fr' else 'Link to your existing signup form (Mailchimp, Substack, Listmonk, etc.).' }}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-instagram me-1"></i>Instagram</label>
+              <input class="form-control" type="text" name="instagram" value="{{ merchant.instagram }}" placeholder="@username">
+            </div>
+            <div class="col-12">
+              <label class="form-label"><i class="bi bi-facebook me-1"></i>Facebook</label>
+              <input class="form-control" type="url" name="facebook" value="{{ merchant.facebook }}" placeholder="https://facebook.com/yourpage">
+            </div>
+          </div>
+        </div>
+
+        <!-- RSS Feed -->
+        <div class="citify-form-card mb-4">
+          <h2 class="h6 text-muted text-uppercase mb-4">{{ 'Flux RSS produits' if lang == 'fr' else 'Product RSS Feed' }}</h2>
+          <div class="mb-0">
+            <label class="form-label"><i class="bi bi-rss me-1"></i>{{ 'URL du flux RSS' if lang == 'fr' else 'RSS Feed URL' }}</label>
+            <label class="form-label"><i class="bi bi-play-circle me-1"></i>{{ 'Vidéo' if lang == 'fr' else 'Video' }}</label>
+            <input class="form-control" type="url" name="video_url" value="{{ merchant.video_url }}"
+                   placeholder="https://youtube.com/watch?v=...">
+            <div class="form-text">{{ 'Lien YouTube ou Vimeo.' if lang == 'fr' else 'YouTube or Vimeo link.' }}</div>
+             <hr>
+         <h6 class="text-uppercase text-muted small mb-3">Delivery / Livraison</h6>
+         <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" name="offers_delivery" id="offers_delivery" value="1"
+         {% if merchant.offers_delivery %}checked{% endif %}>
+           <label class="form-check-label" for="offers_delivery">We offer delivery / Nous offrons la livraison</label>
+          </div>
+          <div class="mb-3">
+           <label class="form-label">Your order / delivery page</label>
+          <input type="url" class="form-control" name="delivery_url"
+         value="{{ merchant.delivery_url or '' }}" placeholder="https://yourstore.com/order">
+         </div>
+         <div class="mb-3">
+          <label class="form-label">Third-party delivery platform</label>
+         <input type="url" class="form-control" name="third_party_delivery_url"
+         value="{{ merchant.third_party_delivery_url or '' }}" placeholder="DoorDash, Uber Eats, Skip...">
+       </div>
+
+       <hr>
+       <h6 class="text-uppercase text-muted small mb-3">Affiliate Tracking <span class="badge bg-secondary ms-1">Optional</span></h6>
+        <div class="mb-3">
+         <label class="form-label">Affiliate suffix</label>
+        <input type="text" class="form-control font-monospace" name="affiliate_suffix"
+         value="{{ merchant.affiliate_suffix or '' }}" placeholder="?ref=yourcode">
+        <div class="form-text">Your affiliate tracking tag — added automatically to your product links on Citify.</div>
+         </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-rss me-1"></i>RSS Feed</label>
+            <input class="form-control" type="url" name="rss_url" value="{{ merchant.rss_url }}"
+                   placeholder="https://votresite.com/?feed=rss2&post_type=product">
+            <div class="form-text">
+              {{ 'Enregistrez l\'URL de votre flux RSS pour importer vos produits rapidement.' if lang == 'fr'
+                 else 'Save your RSS feed URL to quickly import products from your website.' }}
+              {% if merchant.rss_url %}
+                <a href="{{ url_for('merchant.import_rss') }}" class="ms-2 text-accent">
+                  <i class="bi bi-box-arrow-up-right me-1"></i>{{ 'Importer maintenant' if lang == 'fr' else 'Import now' }}
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Promotion banner -->
+        <div class="citify-card p-3 mb-4">
+          <h2 class="h6 text-muted text-uppercase mb-3"><i class="bi bi-megaphone me-2"></i>{{ "Promotion" if lang == 'fr' else "Promotion" }} <span class="badge bg-secondary ms-1">{{ 'Optionnel' if lang == 'fr' else 'Optional' }}</span></h2>
+          <p class="text-muted small mb-3">{{ "Affichez une promotion, un coupon ou une annonce sur votre profil public. Elle disparaît automatiquement à la date d'expiration." if lang == 'fr' else "Show a promotion, coupon, or announcement on your public profile. It disappears automatically after the expiry date." }}</p>
+          <div class="mb-2">
+            <label class="form-label small">{{ "Titre" if lang == 'fr' else "Title" }}</label>
+            <input type="text" class="form-control form-control-sm" name="promo_title"
+                   value="{{ merchant.promo_title or '' }}" maxlength="200"
+                   placeholder="{{ '20% de rabais ce week-end !' if lang == 'fr' else '20% off this weekend!' }}">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">{{ "Détails" if lang == 'fr' else "Details" }}</label>
+            <textarea class="form-control form-control-sm" name="promo_body" rows="2" maxlength="500"
+                      placeholder="{{ 'Code : CITIFY20 — valide en boutique et en ligne.' if lang == 'fr' else 'Use code CITIFY20 — valid in-store and online.' }}">{{ merchant.promo_body or '' }}</textarea>
+          </div>
+          <div class="row g-2">
+            <div class="col-md-8">
+              <label class="form-label small">{{ "Lien (optionnel)" if lang == 'fr' else "Link (optional)" }}</label>
+              <input type="url" class="form-control form-control-sm" name="promo_url"
+                     value="{{ merchant.promo_url or '' }}" placeholder="https://...">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small">{{ "Expire le" if lang == 'fr' else "Expires" }}</label>
+              <input type="date" class="form-control form-control-sm" name="promo_expires"
+                     value="{{ merchant.promo_expires.strftime('%Y-%m-%d') if merchant.promo_expires else '' }}">
+            </div>
+          </div>
+          {% if merchant.promo_title %}
+          <div class="mt-2">
+            <button type="submit" name="clear_promo" value="1" class="btn btn-outline-danger btn-sm">
+              <i class="bi bi-x-circle me-1"></i>{{ "Supprimer la promotion" if lang == 'fr' else "Clear promotion" }}
+            </button>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Logo -->
+        <div class="citify-form-card mb-4">
+          <h2 class="h6 text-muted text-uppercase mb-4">{{ 'Logo du commerce' if lang == 'fr' else 'Business Logo' }}</h2>
+          {% if merchant.logo_url %}
+            <img src="{{ merchant.logo_url }}" alt="Logo" class="merchant-logo mb-3" style="width:80px;height:80px;">
+          {% endif %}
+          <input class="form-control" type="file" name="logo" accept="image/*"
+                 onchange="previewImages(this, 'logo-preview')">
+          <div id="logo-preview" class="d-flex gap-2 mt-2"></div>
+          <div class="form-text">{{ 'JPG, PNG ou WebP. Max 8MB.' }}</div>
+        </div>
+
+        <!-- Opening Hours -->
+        <div class="citify-card p-3 mb-4">
+          <h3 class="h6 text-muted text-uppercase mb-3"><i class="bi bi-clock me-2"></i>{{ "Heures d'ouverture" if lang == 'fr' else 'Opening Hours' }}</h3>
+          {% set days = [
+            ('mon', 'Monday', 'Lundi'),
+            ('tue', 'Tuesday', 'Mardi'),
+            ('wed', 'Wednesday', 'Mercredi'),
+            ('thu', 'Thursday', 'Jeudi'),
+            ('fri', 'Friday', 'Vendredi'),
+            ('sat', 'Saturday', 'Samedi'),
+            ('sun', 'Sunday', 'Dimanche'),
+          ] %}
+          {% set hours = merchant.get_hours() %}
+          {% for key, en, fr in days %}
+            {% set day = hours.get(key, {}) %}
+            <div class="row g-2 align-items-center mb-2">
+              <div class="col-3 col-md-2">
+                <span class="small fw-600">{{ fr if lang == 'fr' else en }}</span>
+              </div>
+              <div class="col-3 col-md-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="hours_closed_{{ key }}"
+                         id="closed_{{ key }}" {{ 'checked' if day.get('closed') }}>
+                  <label class="form-check-label small text-muted" for="closed_{{ key }}">
+                    {{ 'Fermé' if lang == 'fr' else 'Closed' }}
+                  </label>
+                </div>
+              </div>
+              <div class="col-3 col-md-4">
+                <input type="time" class="form-control form-control-sm" name="hours_open_{{ key }}"
+                       value="{{ day.get('open', '09:00') }}">
+              </div>
+              <div class="col-3 col-md-4">
+                <input type="time" class="form-control form-control-sm" name="hours_close_{{ key }}"
+                       value="{{ day.get('close', '17:00') }}">
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="d-flex gap-3">
+          <button type="submit" class="btn btn-accent px-5">
+            <i class="bi bi-check-lg me-1"></i>{{ 'Enregistrer' if lang == 'fr' else 'Save Changes' }}
+          </button>
+          <a href="{{ url_for('merchant.dashboard') }}" class="btn btn-outline-secondary">
+            {{ 'Annuler' if lang == 'fr' else 'Cancel' }}
+          </a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

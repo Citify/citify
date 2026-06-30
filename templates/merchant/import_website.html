@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Importer depuis mon site' if lang == 'fr' else 'Import from Website' }} — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-7">
+
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="{{ url_for('merchant.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="h4 mb-0">{{ 'Importer depuis mon site web' if lang == 'fr' else 'Import from My Website' }}</h1>
+      </div>
+
+      <div class="citify-card p-3 mb-4">
+        <p class="text-muted small mb-0">
+          <i class="bi bi-info-circle me-1"></i>
+          {{ 'Fonctionne mieux avec WooCommerce et Shopify. Pour les autres sites, le résultat peut varier.' if lang == 'fr'
+             else 'Works best with WooCommerce and Shopify. For other sites, results may vary.' }}
+        </p>
+      </div>
+
+      <div class="citify-form-card">
+        <form method="post" action="{{ url_for('merchant.import_website') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="mb-4">
+            <label class="form-label">{{ 'URL de votre site' if lang == 'fr' else 'Your Website URL' }}</label>
+            <input class="form-control" type="url" name="url"
+                   placeholder="https://monsite.com/produits"
+                   value="{{ request.form.get('url', '') }}" required>
+          </div>
+
+          {% if imported %}
+            <div class="mb-4">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h2 class="h6 text-muted text-uppercase mb-0">
+                  {{ imported|length }} {{ 'produits trouvés' if lang == 'fr' else 'products found' }}
+                </h2>
+                <span class="badge" style="background:var(--success);color:#fff;">
+                  <i class="bi bi-globe me-1"></i>Web
+                </span>
+              </div>
+
+              <div class="table-responsive" style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);">
+                <table class="table table-sm mb-0" style="color:var(--text-muted);font-size:0.85rem;">
+                  <thead style="position:sticky;top:0;background:var(--bg-elevated);">
+                    <tr>
+                      <th>{{ 'Nom' if lang == 'fr' else 'Name' }}</th>
+                      <th>{{ 'Prix' if lang == 'fr' else 'Price' }}</th>
+                      <th>{{ 'Image' if lang == 'fr' else 'Image' }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for p in imported %}
+                    <tr>
+                      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ p.name_en }}</td>
+                      <td style="white-space:nowrap;">
+                        {% if p.price %}
+                          ${{ "%.2f"|format(p.price) }}
+                        {% else %}
+                          <span class="text-muted fst-italic">{{ 'Sur demande' if lang == 'fr' else 'On request' }}</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if p.image_url %}
+                          <i class="bi bi-check-circle text-success" title="{{ p.image_url }}"></i>
+                        {% else %}
+                          <i class="bi bi-dash text-muted"></i>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+
+              {# Pass scraped data as JSON so confirm does not re-scrape #}
+              <input type="hidden" name="confirm" value="1">
+              <input type="hidden" name="imported_json" id="imported_json_field">
+              <script id="imported_data" type="application/json">{{ imported|tojson }}</script>
+              <script>
+                document.getElementById('imported_json_field').value = 
+                 document.getElementById('imported_data').textContent;
+              </script>
+
+              <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-accent flex-grow-1">
+                  <i class="bi bi-check-lg me-1"></i>
+                  {{ 'Confirmer l\'import (' ~ imported|length ~ ' produits)' if lang == 'fr'
+                     else 'Confirm Import (' ~ imported|length ~ ' products)' }}
+                </button>
+                <a href="{{ url_for('merchant.import_website') }}" class="btn btn-outline-secondary">
+                  {{ 'Annuler' if lang == 'fr' else 'Cancel' }}
+                </a>
+              </div>
+            </div>
+
+          {% elif error %}
+            <div class="alert alert-danger mb-3">
+              <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+            </div>
+            <button type="submit" class="btn btn-accent w-100">
+              <i class="bi bi-arrow-clockwise me-1"></i>{{ 'Réessayer' if lang == 'fr' else 'Try Again' }}
+            </button>
+
+          {% else %}
+            <button type="submit" class="btn btn-accent w-100">
+              <i class="bi bi-search me-1"></i>{{ 'Rechercher les produits' if lang == 'fr' else 'Find Products' }}
+            </button>
+          {% endif %}
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

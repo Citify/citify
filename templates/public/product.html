@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name(lang) }} — {{ merchant.business_name }} — Citify{% endblock %}
+{% block meta_description %}{{ product.description(lang)[:150] if product.description(lang) else product.name(lang) + ' — ' + merchant.business_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb" style="background:none;padding:0;font-size:0.85rem;">
+      <li class="breadcrumb-item"><a href="{{ url_for('public.index') }}" class="text-muted">Citify</a></li>
+      <li class="breadcrumb-item"><a href="{{ url_for('public.merchant_profile', slug=merchant.slug) }}" class="text-muted">{{ merchant.business_name }}</a></li>
+      <li class="breadcrumb-item active text-muted">{{ product.name(lang) }}</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4">
+
+    <!-- Images -->
+    <div class="col-12 col-md-6">
+      {% if product.images %}
+        <img src="{{ product.images[0].image_url }}" alt="{{ product.name(lang) }}"
+             class="img-fluid rounded" style="width:100%;aspect-ratio:1/1;object-fit:cover;border:1px solid var(--border);"
+             loading="lazy">
+        {% if product.images|length > 1 %}
+          <div class="d-flex gap-2 mt-2 flex-wrap">
+            {% for img in product.images[1:5] %}
+              <img src="{{ img.thumbnail_url }}" alt="{{ product.name(lang) }}"
+                   style="width:72px;height:72px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;"
+                   loading="lazy">
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% else %}
+        <div style="width:100%;aspect-ratio:1/1;background:var(--bg-elevated);border-radius:var(--radius);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;">
+          <i class="bi bi-image" style="font-size:4rem;color:var(--text-muted);"></i>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Details -->
+    <div class="col-12 col-md-6">
+      <h1 class="h2 mb-2">{{ product.name(lang) }}</h1>
+
+      <!-- Price -->
+      <div class="mb-3">
+        {% if product.is_on_sale and product.sale_price %}
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="badge" style="background:#e74c3c;color:#fff;font-size:0.9rem;padding:0.4rem 0.7rem;">🏷️ {{ 'En solde' if lang == 'fr' else 'On sale' }}</span>
+            <span class="h3 text-accent fw-800 mb-0">${{ "%.2f"|format(product.sale_price) }}</span>
+            <span class="h5 text-muted text-decoration-line-through mb-0">${{ "%.2f"|format(product.price) }}</span>
+            {% if product.price %}
+              <span class="badge" style="background:rgba(231,76,60,0.15);color:#e74c3c;">
+                -{{ ((1 - product.sale_price / product.price) * 100)|int }}%
+              </span>
+            {% endif %}
+          </div>
+        {% elif product.price_on_request or product.price is none %}
+          <span class="h4 text-muted fst-italic">{{ 'Prix sur demande' if lang == 'fr' else 'Price on request' }}</span>
+        {% else %}
+          <span class="h3 text-accent fw-800">${{ "%.2f"|format(product.price) }}</span>
+        {% endif %}
+      </div>
+
+      <!-- Description -->
+      {% if product.description(lang) %}
+        <p class="text-muted mb-4">{{ product.description(lang) }}</p>
+      {% endif %}
+
+      <!-- Contact merchant -->
+      <div class="citify-card p-3 mb-4">
+        <p class="text-muted small mb-3">{{ 'Contacter le commerçant pour commander :' if lang == 'fr' else 'Contact the merchant to order:' }}</p>
+        <div class="d-flex flex-wrap gap-2">
+          {% if merchant.whatsapp %}
+            <a href="https://wa.me/{{ merchant.whatsapp|replace(' ','')|replace('-','')|replace('+','') }}?text={{ ('Je suis intéressé par ' + product.name(lang))|urlencode if lang == 'fr' else ('I am interested in ' + product.name(lang))|urlencode }}"
+               class="btn btn-accent btn-sm" target="_blank" rel="noopener">
+              <i class="bi bi-whatsapp me-1"></i>WhatsApp
+            </a>
+          {% endif %}
+          {% if merchant.phone %}
+            <a href="tel:{{ merchant.phone }}" class="btn btn-outline-accent btn-sm">
+              <i class="bi bi-telephone me-1"></i>{{ merchant.phone }}
+            </a>
+          {% endif %}
+          {% if merchant.website %}
+            <a href="{{ merchant.website }}" class="btn btn-outline-secondary btn-sm" target="_blank" rel="noopener nofollow">
+              <i class="bi bi-globe me-1"></i>{{ 'Site web' if lang == 'fr' else 'Website' }}
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Share -->
+      <div class="dropdown">
+       <button class="social-share-btn"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+          title="{{ 'Partager' if lang == 'fr' else 'Share' }}"
+          aria-label="{{ 'Partager' if lang == 'fr' else 'Share' }}">
+    <i class="bi bi-share-fill"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end citify-share-menu">
+    <li>
+      <a class="dropdown-item"
+         href="https://wa.me/?text={{ (product.name(lang) ~ ' — ' ~ request.url)|urlencode }}"
+         target="_blank" rel="noopener">
+        <i class="bi bi-whatsapp text-success me-2"></i>WhatsApp
+      </a>
+    </li>
+    <li>
+      <a class="dropdown-item"
+         href="https://www.facebook.com/sharer/sharer.php?u={{ request.url|urlencode }}"
+         target="_blank" rel="noopener">
+        <i class="bi bi-facebook me-2" style="color:#1877f2;"></i>Facebook
+      </a>
+    </li>
+    <li>
+      <a class="dropdown-item"
+         href="https://twitter.com/intent/tweet?text={{ (product.name(lang) ~ ' — Citify')|urlencode }}&url={{ request.url|urlencode }}"
+         target="_blank" rel="noopener">
+        <i class="bi bi-twitter-x me-2"></i>X / Twitter
+      </a>
+    </li>
+    <li>
+      <a class="dropdown-item"
+         href="mailto:?subject={{ product.name(lang)|urlencode }}&body={{ request.url|urlencode }}">
+        <i class="bi bi-envelope me-2"></i>{{ 'Courriel' if lang == 'fr' else 'Email' }}
+      </a>
+    </li>
+    <li><hr class="dropdown-divider"></li>
+    <li>
+      <button class="dropdown-item"
+              data-success="{{ 'Lien copié !' if lang == 'fr' else 'Copied!' }}"
+              data-label="{{ 'Copier le lien' if lang == 'fr' else 'Copy link' }}"
+              onclick="copyPageLink(this)">
+        <i class="bi bi-link-45deg me-2"></i>{{ 'Copier le lien' if lang == 'fr' else 'Copy link' }}
+      </button>
+    </li>
+  </ul>
+</div>
+
+      <!-- Back to merchant -->
+      <div class="mt-4 pt-3" style="border-top:1px solid var(--border);">
+        <a href="{{ url_for('public.merchant_profile', slug=merchant.slug) }}" class="d-flex align-items-center gap-3 text-decoration-none">
+          {% if merchant.logo_url %}
+            <img src="{{ merchant.logo_url }}" alt="{{ merchant.business_name }}" style="width:40px;height:40px;border-radius:var(--radius-sm);object-fit:cover;">
+          {% else %}
+            <div style="width:40px;height:40px;border-radius:var(--radius-sm);background:var(--bg-elevated);display:flex;align-items:center;justify-content:center;">
+              <i class="bi bi-shop text-accent"></i>
+            </div>
+          {% endif %}
+          <div>
+            <div class="fw-600 text-primary">{{ merchant.business_name }}</div>
+            <div class="text-muted small">{{ 'Voir tous les produits →' if lang == 'fr' else 'View all products →' }}</div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

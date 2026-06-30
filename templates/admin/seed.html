@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Seed Merchant — Admin — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5" style="max-width:700px;">
+
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h1 class="h3 mb-0"><i class="bi bi-database-fill-add text-accent me-2"></i>Seed a Merchant</h1>
+  </div>
+
+  <div class="citify-card p-4">
+    <p class="text-muted small mb-4">
+      Creates an unclaimed listing on behalf of a Montreal business.
+      The merchant can claim it later via the "Claim this listing" button on their profile.
+    </p>
+
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="row g-3 mb-3">
+        <div class="col-12">
+          <label class="form-label fw-600">Business Name <span class="text-danger">*</span></label>
+          <input class="form-control" type="text" name="business_name" required autofocus
+                 placeholder="Café Olimpico">
+          <div class="mb-3">
+           <label class="form-label">Contact email <small class="text-muted">— real address to send claim link (optional)</small></label>
+          <input type="email" class="form-control" name="contact_email"
+         placeholder="owner@theirbusiness.com">
+          <div class="form-text">Leave blank if unknown. You can resend later once you have their email.</div>
+         </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-600">Website URL</label>
+          <input class="form-control" type="url" name="website"
+                 placeholder="https://example.com">
+          <div class="form-text">Used to scrape products (Shopify/WooCommerce)</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-600">RSS Feed URL</label>
+          <input class="form-control" type="url" name="rss_url"
+                 placeholder="https://example.com/feed">
+          <div class="form-text">Alternative to website scraping</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-600">Neighbourhood</label>
+          <select class="form-select" name="neighbourhood">
+            <option value="">Select...</option>
+            {% for n in neighbourhoods %}
+              <option value="{{ n.en }}">{{ n.en }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-600">Category</label>
+          <select class="form-select" name="category_id">
+            <option value="">Select...</option>
+            {% for cat in categories %}
+              <option value="{{ cat.id }}">{{ cat.name_en }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label fw-600">Address</label>
+          <input class="form-control" type="text" name="address"
+                 placeholder="1234 Rue Saint-Denis, Montreal, QC">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-600">Phone</label>
+          <input class="form-control" type="text" name="phone"
+                 placeholder="514-555-0000">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-600">Instagram</label>
+          <input class="form-control" type="text" name="instagram"
+                 placeholder="@username">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-600">Description (English)</label>
+          <textarea class="form-control" name="description_en" rows="3"
+                    placeholder="Brief description of the business..."></textarea>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-600">Description (Français)</label>
+          <textarea class="form-control" name="description_fr" rows="3"
+                    placeholder="Brève description du commerce..."></textarea>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-accent w-100">
+        <i class="bi bi-database-fill-add me-2"></i>Seed Merchant + Import Products
+      </button>
+      <hr>
+<h6 class="text-uppercase text-muted small mb-3">Delivery Options</h6>
+<div class="form-check mb-2">
+  <input class="form-check-input" type="checkbox" name="offers_delivery" id="offers_delivery" value="1">
+  <label class="form-check-label" for="offers_delivery">Offers delivery</label>
+</div>
+<div class="mb-2">
+  <input type="url" class="form-control" name="delivery_url" placeholder="Merchant's own order page (optional)">
+</div>
+<div class="mb-3">
+  <input type="url" class="form-control" name="third_party_delivery_url" placeholder="DoorDash / Uber Eats / Skip link (optional)">
+</div>
+
+<hr>
+<h6 class="text-uppercase text-muted small mb-3">Affiliate Program</h6>
+<div class="mb-3">
+  <label class="form-label">Affiliate suffix <small class="text-muted">— appended to every product URL</small></label>
+  <input type="text" class="form-control font-monospace" name="affiliate_suffix" placeholder="?ref=citify">
+  <div class="form-text">Sign up for their affiliate program and paste the tracking suffix here.</div>
+</div>
+<div class="mb-3">
+  <label class="form-label">Affiliate landing page <small class="text-muted">— fallback if no product URLs</small></label>
+  <input type="url" class="form-control" name="affiliate_url" placeholder="https://merchant.com?ref=YOUR_ID">
+</div>
+    </form>
+  </div>
+
+  <div class="text-center mt-3">
+    <a href="{{ url_for('admin.merchants') }}" class="text-muted small">View all merchants →</a>
+  </div>
+
+</div>
+{% endblock %}

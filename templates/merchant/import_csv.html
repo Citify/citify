@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Importer CSV' if lang == 'fr' else 'Import CSV' }} — Citify{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-7">
+
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="{{ url_for('merchant.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="h4 mb-0">{{ 'Importer des produits via CSV' if lang == 'fr' else 'Import Products via CSV' }}</h1>
+      </div>
+
+      <!-- Format guide -->
+      <div class="citify-card p-4 mb-4">
+        <h2 class="h6 text-muted text-uppercase mb-3"><i class="bi bi-info-circle me-2"></i>{{ 'Format requis' if lang == 'fr' else 'Required Format' }}</h2>
+        <p class="text-muted small mb-3">{{ 'Votre fichier CSV doit avoir les colonnes suivantes :' if lang == 'fr' else 'Your CSV file must have the following columns:' }}</p>
+        <div class="table-responsive">
+          <table class="table table-sm" style="color:var(--text-muted);font-size:0.85rem;">
+            <thead>
+              <tr style="border-color:var(--border);">
+                <th>{{ 'Colonne' if lang == 'fr' else 'Column' }}</th>
+                <th>{{ 'Requis' if lang == 'fr' else 'Required' }}</th>
+                <th>{{ 'Exemple' if lang == 'fr' else 'Example' }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>name_en</td><td><span class="text-accent">✓</span></td><td>Café au lait</td></tr>
+              <tr><td>name_fr</td><td>—</td><td>Café au lait</td></tr>
+              <tr><td>description_en</td><td>—</td><td>Fresh brewed coffee with steamed milk</td></tr>
+              <tr><td>description_fr</td><td>—</td><td>Café frais avec lait vapeur</td></tr>
+              <tr><td>price</td><td>—</td><td>4.50 {{ 'ou' if lang == 'fr' else 'or' }} "sur demande"</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Upload form -->
+      <div class="citify-form-card">
+        <form method="post" action="{{ url_for('merchant.import_csv') }}" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-4">
+            <label class="form-label">{{ 'Fichier CSV' if lang == 'fr' else 'CSV File' }}</label>
+            <input class="form-control" type="file" name="csv_file" accept=".csv" required>
+          </div>
+          <button type="submit" class="btn btn-accent w-100">
+            <i class="bi bi-upload me-1"></i>{{ 'Importer les produits' if lang == 'fr' else 'Import Products' }}
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
